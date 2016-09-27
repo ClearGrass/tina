@@ -52,6 +52,10 @@
 #define BSA_AVK_FEATURES    (BSA_AVK_FEAT_RCCT|BSA_AVK_FEAT_RCTG|BSA_AVK_FEAT_VENDOR|BSA_AVK_FEAT_METADATA | BSA_AVK_FEAT_BROWSE)
 #endif
 
+#ifndef BSA_AVK_FEATURES_NO_AVRCP
+#define BSA_AVK_FEATURES_NO_AVRCP    (BSA_AVK_FEAT_VENDOR|BSA_AVK_FEAT_METADATA | BSA_AVK_FEAT_BROWSE)
+#endif
+
 #ifndef BSA_AVK_DUMP_RX_DATA
 #define BSA_AVK_DUMP_RX_DATA FALSE
 #endif
@@ -398,7 +402,9 @@ static void app_avk_handle_start(tBSA_AVK_MSG *p_data, tAPP_AVK_CONNECTION *conn
             if (status < 0)
             {
                 APP_ERROR1("snd_pcm_set_params failed: %s", snd_strerror(status));
-                pthread_mutex_unlock(&alsa_opt_mutex);
+				snd_pcm_close(app_avk_cb.alsa_handle);
+				app_avk_cb.alsa_handle = NULL;
+				pthread_mutex_unlock(&alsa_opt_mutex);
                 return;
             }
 
@@ -851,7 +857,9 @@ int app_avk_resume_pcm_alsa()
             if (status < 0)
             {
                 APP_ERROR1("snd_pcm_set_params failed: %s", snd_strerror(status));
-                pthread_mutex_unlock(&alsa_opt_mutex);
+				snd_pcm_close(app_avk_cb.alsa_handle);
+				app_avk_cb.alsa_handle = NULL;
+				pthread_mutex_unlock(&alsa_opt_mutex);
                 return -1;
             }
 
@@ -1568,6 +1576,54 @@ int app_avk_init(tAvkCallback pcb /* = NULL */)
 
     bsa_avk_enable_param.sec_mask = BSA_AVK_SECURITY;
     bsa_avk_enable_param.features = BSA_AVK_FEATURES;
+    bsa_avk_enable_param.p_cback = app_avk_cback;
+
+    status = BSA_AvkEnable(&bsa_avk_enable_param);
+    if (status != BSA_SUCCESS)
+    {
+        APP_ERROR0("Unable to enable AVK service");
+        return -1;
+    }
+
+    pthread_mutex_init(&alsa_opt_mutex, NULL);
+
+    return BSA_SUCCESS;
+
+}
+
+/*******************************************************************************
+**
+** Function         app_avk_init_no_avrcp
+**
+** Description      Init Manager application
+**
+** Parameters       Application callback (if null, default will be used)
+**
+** Returns          0 if successful, error code otherwise
+**
+*******************************************************************************/
+int app_avk_init_no_avrcp(tAvkCallback pcb /* = NULL */)
+{
+    tBSA_AVK_ENABLE bsa_avk_enable_param;
+    tBSA_STATUS status;
+
+    /* register callback */
+    s_pCallback = pcb;
+
+    /* Initialize the control structure */
+    memset(&app_avk_cb, 0, sizeof(app_avk_cb));
+    app_avk_cb.uipc_audio_channel = UIPC_CH_ID_BAD;
+
+    app_avk_cb.fd = -1;
+
+    /* set sytem vol at 50% */
+    app_avk_cb.volume = (UINT8)((BSA_MAX_ABS_VOLUME - BSA_MIN_ABS_VOLUME)>>1);
+
+    /* get hold on the AVK resource, synchronous mode */
+    BSA_AvkEnableInit(&bsa_avk_enable_param);
+
+    bsa_avk_enable_param.sec_mask = BSA_AVK_SECURITY;
+    bsa_avk_enable_param.features = BSA_AVK_FEATURES_NO_AVRCP;
     bsa_avk_enable_param.p_cback = app_avk_cback;
 
     status = BSA_AvkEnable(&bsa_avk_enable_param);

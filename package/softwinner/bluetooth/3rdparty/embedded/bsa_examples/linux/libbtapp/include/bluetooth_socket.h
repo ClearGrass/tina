@@ -31,6 +31,16 @@ enum BT_EVENT{
 
 typedef void (tBtCallback)(BT_EVENT event, void *reply, int *len);
 
+#ifndef AVK_MUSIC_INFO_LEN_MAX
+#define AVK_MUSIC_INFO_LEN_MAX 102
+#endif
+
+typedef struct{
+    unsigned char title[AVK_MUSIC_INFO_LEN_MAX];
+    unsigned char artist[AVK_MUSIC_INFO_LEN_MAX];
+    unsigned char album[AVK_MUSIC_INFO_LEN_MAX];
+}tBT_AVK_MUSIC_INFO;
+
 class c_bt
 {
 public:
@@ -43,6 +53,7 @@ private:
 
 public:
     int bt_on(char *bt_addr);
+    int bt_on_no_avrcp(char *bt_addr);
     int bt_off();
     int set_bt_name(const char *bt_name); // strlen(bt_name) <= MAX_DATA_T_LEN-1
     int set_dev_discoverable(int enable);
@@ -60,6 +71,7 @@ public:
     int avk_resume_pcm_alsa();
     int avk_previous();
     int avk_next();
+    int avk_get_music_info(tBT_AVK_MUSIC_INFO *p_avk_music_info);
     int hs_pick_up();
     int hs_hung_up();
     void set_callback(tBtCallback *pCb);

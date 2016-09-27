@@ -44,6 +44,31 @@ int c_bt::bt_on(char *bt_addr){
     return 0;
 }
 
+int c_bt::bt_on_no_avrcp(char *bt_addr){
+
+    char cmd[512] = {0};
+
+    printf("do bt cmd bt on bt_addr path %s\n", bt_addr);
+    if(this->bt_on_status == 1){
+        printf("bt already on\n");
+        return 0;
+    }
+
+    /* start bt server */
+    snprintf(cmd, 512, "/etc/bluetooth/btenable.sh on");
+    system(cmd);
+    usleep(1000000);
+
+    /*start bluetooth app*/
+    bluetooth_start(this,bt_addr);
+
+    /*start app avk*/
+    start_app_avk_no_avrcp();
+
+    this->bt_on_status = 1;
+    return 0;
+}
+
 int c_bt::bt_off(){
     printf("do bt cmd bt off\n");
 
@@ -200,6 +225,25 @@ int c_bt::avk_next()
 {
     printf("do bt cmd avk next\n");
     s_avk_play_next();
+    return 0;
+}
+
+int c_bt::avk_get_music_info(tBT_AVK_MUSIC_INFO *p_avk_music_info)
+{
+    s_avk_element_attr_t s_avk_element_attr;
+
+    printf("do bt cmd avk get music info\n");
+
+    if(!p_avk_music_info){
+	printf("Error: avk music info is NULL!\n");
+	return -1;
+    }
+    s_avk_get_element_attr(&s_avk_element_attr);
+
+    memcpy(p_avk_music_info->title, s_avk_element_attr.title, AVK_MUSIC_INFO_LEN_MAX);
+    memcpy(p_avk_music_info->artist, s_avk_element_attr.artist, AVK_MUSIC_INFO_LEN_MAX);
+    memcpy(p_avk_music_info->album, s_avk_element_attr.album, AVK_MUSIC_INFO_LEN_MAX);
+    //memcpy(p_avk_music_info->playing_time, s_avk_element_attr.playing_time, AVK_MUSIC_INFO_LEN_MAX);
     return 0;
 }
 
