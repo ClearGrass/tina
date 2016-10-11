@@ -590,7 +590,7 @@ sdc_use_wp               = 0
 sdc_wp                   =
 
 [mmc1_para]
-sdc_used                 = 0
+sdc_used                 = 1
 sdc_detmode              =
 bus_width                =
 sdc_cmd                  =
