@@ -1,8 +1,8 @@
-prefix=/home/leo/Qt/Qt-4.8.7-R8-opengles
+prefix=/home/xiaow6/cleargrass_qt/Qt/Qt-4.8.7-R8-opengles
 exec_prefix=${prefix}
 libdir=${prefix}/lib
 includedir=${prefix}/include/QtWebKit
-qt_config=lex yacc uic resources qt release incremental link_prl gdb_dwarf_index cross_compile shared def_files_disabled no_mocdepend release stl qt_no_framework cross_compile release embedded stl precompile_header neon exceptions_off dylib create_prl link_prl depend_includepath QTDIR_build building-libs depend_includepath embedded standalone_package depend_includepath include_webinspector production production embedded no_debug_info link_pkgconfig embedded production qt_install_headers qt warn_on depend_includepath qmake_cache target_qt hide_symbols create_pc create_libtool moc thread dll shared
+qt_config=lex yacc uic resources qt release incremental link_prl gdb_dwarf_index cross_compile shared qpa def_files_disabled exceptions no_mocdepend release stl qt_no_framework cross_compile release qpa stl precompile_header neon dylib create_prl link_prl depend_includepath QTDIR_build building-libs depend_includepath embedded standalone_package depend_includepath include_webinspector production production embedded no_debug_info link_pkgconfig production qt_install_headers qt warn_on depend_includepath qmake_cache target_qt hide_symbols create_pc create_libtool moc thread dll shared
 moc_location=${prefix}/bin/moc
 uic_location=${prefix}/bin/uic
 rcc_location=${prefix}/bin/rcc
@@ -13,7 +13,7 @@ Name: Qtwebkit
 Description: Qtwebkit Library
 Version: 4.9.4
 Libs: -L${libdir} -lQtWebKit 
-Libs.private: -L/home/leo/Qt/Qt-4.8.7-R8-opengles/lib -L../../WebCore/release -L../../JavaScriptCore/release  -lwebcore -L/home/leo/Qt/Qt-4.8.7-R8-opengles/lib -L/home/leo/Qt/Qt-4.8.7-R8-opengles/mkspecs/linux-arm-gnueabi-g++/lib -ljscore -lQtGui -lEGL -lQtNetwork -lQtCore -lpthread   
-Cflags: -DQT_SHARED -I/home/leo/Qt/Qt-4.8.7-R8-opengles/include -I${includedir}
+Libs.private: -L/home/xiaow6/cleargrass_qt/Qt/Qt-4.8.7-R8-opengles/lib -L../../WebCore/release -L../../JavaScriptCore/release  -lwebcore -L/home/xiaow6/cleargrass_qt/Qt/Qt-4.8.7-R8-opengles/lib -ljscore -lQtGui -lQtNetwork -lQtCore -lpthread   
+Cflags: -DQT_SHARED -I/home/xiaow6/cleargrass_qt/Qt/Qt-4.8.7-R8-opengles/include -I${includedir}
 Requires: QtCore QtGui QtNetwork
 

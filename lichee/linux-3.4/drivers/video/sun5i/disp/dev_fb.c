@@ -6,52 +6,12 @@
 #define MY_BYTE_ALIGN(x) ( ( (x + (4*1024-1)) >> 12) << 12)             /* alloc based on 4K byte */
 #define _ALIGN( value, base ) (((value) + ((base) - 1)) & ~((base) - 1))
 
+static int Fb_wait_for_vsync(struct fb_info *info);
+
 struct __fb_addr_para {
         int fb_paddr;
         int fb_size;
 };
-typedef struct
-{
-    int x;
-    int y;
-    int bit;
-    void *buffer;
-}sunxi_bmp_store_t;
-typedef struct bmp_color_table_entry {
-    __u8    blue;
-    __u8    green;
-    __u8    red;
-    __u8    reserved;
-} __attribute__ ((packed)) bmp_color_table_entry_t;
-
-typedef struct bmp_header {
-    /* Header */
-    char signature[2];
-    __u32   file_size;
-    __u32   reserved;
-    __u32   data_offset;
-    /* InfoHeader */
-    __u32   size;
-    __u32   width;
-    __u32   height;
-    __u16   planes;
-    __u16   bit_count;
-    __u32   compression;
-    __u32   image_size;
-    __u32   x_pixels_per_m;
-    __u32   y_pixels_per_m;
-    __u32   colors_used;
-    __u32   colors_important;
-    /* ColorTable */
-
-} __attribute__ ((packed)) bmp_header_t;
-
-typedef struct bmp_image {
-    bmp_header_t header;
-    /* We use a zero sized array just as a placeholder for variable
-       sized array */
-    bmp_color_table_entry_t color_table[0];
-} bmp_image_t;
 extern fb_info_t g_fbi;
 struct   mutex	gcommit_mutek;
 static struct __fb_addr_para global_fb_addr;
@@ -260,32 +220,6 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
     return 0;
 }
 
-void *Fb_map_kernel(unsigned long phys_addr, unsigned long size)
-{
-    int npages = PAGE_ALIGN(size) / PAGE_SIZE;
-    struct page **pages = vmalloc(sizeof(struct page *) * npages);
-    struct page **tmp = pages;
-    struct page *cur_page = phys_to_page(phys_addr);
-    pgprot_t pgprot;
-    void *vaddr;
-    int i;
-
-    if(!pages)
-        return 0;
-
-    for(i = 0; i < npages; i++)
-        *(tmp++) = cur_page++;
-
-    pgprot = pgprot_noncached(PAGE_KERNEL);
-    vaddr = vmap(pages, npages, VM_MAP, pgprot);
-
-    vfree(pages);
-    return vaddr;
-}
-static void Fb_unmap_kernel(void *vaddr)
-{
-    vunmap(vaddr);
-}
 __s32 fb_draw_colorbar(__u32 base, __u32 width, __u32 height, struct fb_var_screeninfo *var)
 {
     __u32 i=0, j=0;
@@ -832,7 +766,7 @@ static int Fb_release(struct fb_info *info, int user)
 {
 	return 0;
 }
-static int Fb_wait_for_vsync(struct fb_info *);
+
 static int Fb_pan_display(struct fb_var_screeninfo *var,struct fb_info *info)
 {
 	__u32 sel = 0;
@@ -892,7 +826,7 @@ static int Fb_pan_display(struct fb_var_screeninfo *var,struct fb_info *info)
             }
         }
     }
-    	Fb_wait_for_vsync(info);
+	Fb_wait_for_vsync(info);
 	return 0;
 }
 
@@ -1458,140 +1392,6 @@ static inline unsigned long RoundUpToMultiple(unsigned long x, unsigned long y)
     unsigned long rem = x % y;
     return (div + ((rem == 0) ? 0 : 1)) * y;
 }
-static phys_addr_t bootlogo_addr = 0;
-static int Fb_map_kernel_logo(__u32 sel, struct fb_info *info)
-{
-    void *vaddr = NULL;
-    unsigned int paddr =  0;
-    void *screen_offset = NULL, *image_offset = NULL;
-    char *tmp_buffer = NULL;
-    char *bmp_data =NULL;
-    sunxi_bmp_store_t s_bmp_info;
-    sunxi_bmp_store_t *bmp_info = &s_bmp_info;
-    bmp_image_t *bmp = NULL;
-    int zero_num = 0;
-    unsigned long x, y, bmp_bpix, fb_width, fb_height;
-    unsigned int effective_width, effective_height;
-    unsigned int offset;
-    int i = 0;
-
-    paddr = bootlogo_addr;
-    if(0 == paddr) {
-        __wrn("Fb_map_kernel_logo failed!");
-        return -1;
-    }
-
-    /* parser bmp header */
-    offset = paddr & ~PAGE_MASK;
-    vaddr = (void *)Fb_map_kernel(paddr, sizeof(bmp_header_t));
-    if(0 == vaddr) {
-        __wrn("fb_map_kernel failed, paddr=0x%x,size=0x%x\n", paddr, sizeof(bmp_header_t));
-        return -1;
-    }
-    bmp = (bmp_image_t *)((unsigned int)vaddr + offset);
-    if((bmp->header.signature[0]!='B') || (bmp->header.signature[1] !='M')) {
-        __wrn("this is not a bmp picture\n");
-        return -1;
-    }
-
-    bmp_bpix = bmp->header.bit_count/8;
-
-    if((bmp_bpix != 3) && (bmp_bpix != 4)) {
-        return -1;
-    }
-
-    if(bmp_bpix ==3) {
-        zero_num = (4 - ((3*bmp->header.width) % 4))&3;
-    }
-
-    x = bmp->header.width;
-    y = (bmp->header.height & 0x80000000) ? (-bmp->header.height):(bmp->header.height);
-    fb_width = info->var.xres;
-    fb_height = info->var.yres;
-    if((paddr <= 0) || x <= 1 || y <= 1) {
-        __wrn("kernel logo para error!\n");
-        return -EINVAL;
-    }
-
-    bmp_info->x = x;
-    bmp_info->y = y;
-    bmp_info->bit = bmp->header.bit_count;
-    bmp_info->buffer = (void *)(info->screen_base);
-
-    if(bmp_bpix == 3)
-        info->var.bits_per_pixel = 24;
-    else if(bmp_bpix == 4)
-        info->var.bits_per_pixel = 32;
-    else
-        info->var.bits_per_pixel = 32;
-
-    Fb_unmap_kernel(vaddr);
-
-    /* map the total bmp buffer */
-    vaddr = (void *)Fb_map_kernel(paddr, x * y * bmp_bpix + sizeof(bmp_header_t));
-    if(0 == vaddr) {
-        __wrn("fb_map_kernel failed, paddr=0x%x,size=0x%x\n", paddr, (unsigned int)(x * y * bmp_bpix + sizeof(bmp_header_t)));
-        return -1;
-    }
-
-    bmp = (bmp_image_t *)((unsigned int)vaddr + offset);
-
-    tmp_buffer = (char *)bmp_info->buffer;
-    screen_offset = (void *)bmp_info->buffer;
-    bmp_data = (char *)(vaddr + offset +  bmp->header.data_offset);
-    image_offset = (void *)bmp_data;
-    effective_width = (fb_width<x)?fb_width:x;
-    effective_height = (fb_height<y)?fb_height:y;
-
-    if(bmp->header.height & 0x80000000) {
-        if(fb_width > x) {
-        screen_offset = (void *)((u32)info->screen_base + (fb_width * (abs(fb_height - y) / 2)
-                + abs(fb_width - x) / 2) * (info->var.bits_per_pixel >> 3));
-        } else if(fb_width < x) {
-                image_offset = (void *)((u32)bmp_data + (x * ((y - fb_height) / 2)
-                        + (x - fb_width) / 2) * (info->var.bits_per_pixel >> 3));
-        }
-
-        for(i=0; i<effective_height; i++) {
-            memcpy((void*)screen_offset, image_offset, effective_width*(info->var.bits_per_pixel >> 3));
-            screen_offset = (void*)((u32)screen_offset + fb_width*(info->var.bits_per_pixel >> 3));
-            image_offset = (void *)image_offset + x * (info->var.bits_per_pixel >> 3);
-        }
-    }
-    else {
-        screen_offset = (void *)((u32)info->screen_base + (fb_width * (abs(fb_height - y) / 2)
-                + abs(fb_width - x) / 2) * (info->var.bits_per_pixel >> 3));
-        image_offset = (void *)((u32)image_offset + (x * (abs(y - fb_height) / 2)
-                + abs(x - fb_width) / 2) * (info->var.bits_per_pixel >> 3));
-#if 0
-        if(3 == bmp_bpix) {
-            unsigned char* ptemp = NULL;
-            unsigned char temp = 0;
-            int h=0;
-
-            ptemp = (char *)image_offset;
-
-            for(h=0; h<effective_height; h++) {
-                for(i=0; i<=effective_width * (info->var.bits_per_pixel >> 3) - 3; i+=3) {
-                    temp = ptemp[i];
-                    ptemp[i] = ptemp[i+1];
-                    ptemp[i+1] = temp;
-                }
-                ptemp = (char *)((void *)bmp_data + h * x *  (info->var.bits_per_pixel >> 3));
-            }
-        }
-#endif
-        image_offset = (void *)bmp_data + (effective_height-1) * x *  (info->var.bits_per_pixel >> 3);
-        for(i=effective_height-1; i>=0; i--) {
-            memcpy((void*)screen_offset, image_offset, effective_width*(info->var.bits_per_pixel >> 3));
-            screen_offset = (void*)((u32)screen_offset + fb_width*(info->var.bits_per_pixel >> 3));
-            image_offset = (void *)bmp_data + i * x *  (info->var.bits_per_pixel >> 3);
-        }
-    }
-
-    Fb_unmap_kernel(vaddr);
-    return 0;
-}
 __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t *fb_para)
 {
 	struct fb_info *info = NULL;
@@ -1649,7 +1449,7 @@ __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t *fb_para)
                     info->var.vsync_len = tt.ver_sync_time;
                 }
             }
-            Fb_map_kernel_logo(sel, info);
+
             if(fb_para->fb_mode == FB_MODE_DUAL_SAME_SCREEN_TB)
             {
                 src_height = yres/ 2;
@@ -1811,53 +1611,7 @@ __s32 Display_set_fb_timming(__u32 sel)
 
 extern unsigned long fb_start;
 extern unsigned long fb_size;
-static int bootlogo_sz = 0;
-int disp_get_parameter_for_cmdlind(char *cmdline, char *name, char *value)
-{
-    char *p = cmdline;
-    char *value_p = value;
 
-    if (!cmdline || !name) {
-        return -1;
-    }
-    for (;;) {
-        if (*p == ' ') {
-            if (!strncmp(++p, name, sizeof(name))) {
-                while (*p != '=' && *p)
-                    p++;
-                p++;
-                while (*p != ' ' && *p) {
-                    *value_p++ = *p++;
-                }
-                *value_p = 0;
-                break;
-            }
-        }
-        p++;
-        if (!*p)
-            break;
-    }
-    return 0;
-}
-
-static s32 fb_parse_bootlogo_base(phys_addr_t *fb_base, int * fb_size)
-{
-    char val[32];
-    char *endp;
-
-    memset(val, 0, sizeof(char) * 16);
-    disp_get_parameter_for_cmdlind(saved_command_line, "fb_base", val);
-
-    *fb_base = 0x0;
-    *fb_base = memparse(val, &endp);
-    printk(KERN_ERR "############base=%x\n",memparse(val, &endp));
-    if (*endp == '@') {
-        *fb_size = *fb_base;
-        *fb_base = memparse(endp + 1, NULL);
-    }
-
-    return 0;
-}
 __s32 Fb_Init(__u32 from)
 {    
     __disp_fb_create_para_t fb_para;
@@ -1873,7 +1627,7 @@ __s32 Fb_Init(__u32 from)
     g_fbi.b_no_output = 0;
     mutex_init(&g_fbi.update_regs_list_lock);
     spin_lock_init(&(g_fbi.update_reg_lock));
-	fb_parse_bootlogo_base(&bootlogo_addr, &bootlogo_sz);
+	
     if(from == 0)//call from lcd driver
     {
 #ifdef FB_RESERVED_MEM
@@ -1885,7 +1639,6 @@ __s32 Fb_Init(__u32 from)
 
         for(i=0; i<8; i++)
         {
-		printk(KERN_ERR "$$$$$$$$$$$$$$$$$$$$\n");
         	g_fbi.fbinfo[i] = framebuffer_alloc(0, g_fbi.dev);
         	g_fbi.fbinfo[i]->fbops   = &dispfb_ops;
         	g_fbi.fbinfo[i]->flags   = 0; 
