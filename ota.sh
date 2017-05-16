@@ -3,6 +3,8 @@ if [ $1 == "SystemUpdate" ]
 	echo "do System Update"
 
 	echo "need do ota"
+
+	pkill BranQt4
 	
 	# 删除原有目录etc 并备份
 	for file in /overlay/usr/bin/qtapp/*
@@ -21,9 +23,8 @@ if [ $1 == "SystemUpdate" ]
 	# 升级命令
 	aw_upgrade_process.sh -f -l /mnt/UDISK
 
-	# 执行绝对路径升级标志位 
-	/sbin/write_misc -s ota
-
+	#sync
+	sleep 5
 	reboot
 
 	elif [ $1 == "BranUpdate" ]

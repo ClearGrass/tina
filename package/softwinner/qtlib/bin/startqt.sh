@@ -32,15 +32,22 @@ export TSLIB_FBDEVICE=/dev/fb0
 export QWS_MOUSE_PROTO=tslib:/dev/input/${TP_EVENT} 
 export TSLIB_TSDEVICE=/dev/input/${TP_EVENT} 
 
-cp /usr/bin/qtapp/miio/device.conf /etc/miio/
-cd /usr/bin/qtapp
+# now=`date '+%Y-%m-%d %H:%M:%S'`
+# version=`grep "CLEARGRASS_VERSION" /usr/bin/qtapp/os-release | cut -f 2 -d '='`
+# did=`cat /usr/bin/qtapp/etc/device.conf | grep -v ^# | grep did= | tail -1 | cut -d '=' -f 2`
+# echo "$now current version is $version current did is $did" >> /usr/bin/qtapp/etc/upgrade.log
+
+# 将备选os-release覆盖掉原有文件夹
+# cp /usr/bin/qtapp/etc/os-release /usr/bin/qtapp/
+# version=`grep "CLEARGRASS_VERSION" /usr/bin/qtapp/os-release | cut -f 2 -d '='`
+# echo "instead version is $version" >> /usr/bin/qtapp/etc/upgrade.log
 
 # 自动加载tvoc
 echo sgpc1x 0x58 > /sys/bus/i2c/devices/i2c-2/new_device
 
 export QWS_DISPLAY=Transformed:Rot270
 
-Passed_File=/usr/bin/qtapp/hodor_passed.txt
+Passed_File=/usr/bin/qtapp/etc/hodor_passed.txt
 Hodor_File=/usr/bin/qtapp/Hodor
 if [ ! -f $Passed_File ] && [ -f $Hodor_File ]; then
 /usr/bin/qtapp/Hodor -qws &

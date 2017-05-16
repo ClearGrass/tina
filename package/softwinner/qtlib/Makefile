@@ -95,7 +95,8 @@ define Package/qtlib/install
 	cp -fpR ./bin/lib/* $(1)/usr/lib
 	$(INSTALL_DATA) ./etc/ts.conf 		$(1)/etc/ts.conf
 	$(INSTALL_DATA) ./etc/pointercal 	$(1)/etc/pointercal
-	$(INSTALL_DATA)	./bin/os-release	$(1)/usr/bin/qtapp/os-release
+	$(INSTALL_BIN) ./bin/etcos-release	$(1)/usr/bin/qtapp/etc/os-release
+	$(INSTALL_BIN) ./bin/os-release		$(1)/usr/bin/qtapp/os-release
 	$(INSTALL_BIN) ./bin/device.conf 	$(1)/usr/bin/qtapp/etc/device.conf
 	$(INSTALL_BIN) ./bin/BranQt4 		$(1)/usr/bin/qtapp/BranQt4
 	$(INSTALL_BIN) ./bin/Hodor 			$(1)/usr/bin/qtapp/Hodor

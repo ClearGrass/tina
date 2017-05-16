@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # 删除此时的device.token
-echo "remove /usr/bin/qtapp/device.token"
-rm /usr/bin/qtapp/device.token
+echo "remove /usr/bin/qtapp/etc/device.token"
+rm /usr/bin/qtapp/etc/device.token
 
 # 终止此时的miio程序
 echo "kill miio_client"
