@@ -99,7 +99,7 @@ define Package/qtlib/install
 	$(INSTALL_BIN) ./bin/os-release		$(1)/usr/bin/qtapp/os-release
 	$(INSTALL_BIN) ./bin/device.conf 	$(1)/usr/bin/qtapp/etc/device.conf
 	$(INSTALL_BIN) ./bin/BranQt4 		$(1)/usr/bin/qtapp/BranQt4
-	$(INSTALL_BIN) ./bin/Hodor 			$(1)/usr/bin/qtapp/Hodor
+	$(INSTALL_BIN) ./bin/HodorApp 		$(1)/usr/bin/qtapp/HodorApp
 	$(INSTALL_BIN) ./bin/SysSVN 		$(1)/usr/bin/qtapp/SysSVN
 	$(INSTALL_BIN) ./bin/IMG_Version 	$(1)/usr/bin/qtapp/IMG_Version
 	$(INSTALL_BIN) ./bin/baklight 		$(1)/usr/bin/qtapp/baklight
