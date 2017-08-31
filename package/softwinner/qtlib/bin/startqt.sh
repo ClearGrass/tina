@@ -53,8 +53,8 @@ if [ ! -f $Passed_File ] && [ -f $Hodor_File ]; then
 /usr/bin/qtapp/HodorApp -qws &
 else
 /usr/bin/qtapp/watchdog.sh &
-/usr/bin/qtapp/miio/miio_client -D
-/usr/bin/qtapp/miio/miio_client_helper_nomqtt.sh &
+#/usr/bin/qtapp/miio/miio_client -D
+#/usr/bin/qtapp/miio/miio_client_helper_nomqtt.sh &
 fi
 
 

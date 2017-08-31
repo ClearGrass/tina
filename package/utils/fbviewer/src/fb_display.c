@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "time.h"
+
 /* Public Use Functions:
  *
  * extern int fb_display(unsigned char *rgbbuff,
@@ -54,7 +56,9 @@ int fb_display(unsigned char *rgbbuff, unsigned char * alpha,
 	unsigned char *fbbuff = NULL;
 	int fh = -1, bp = 0;
 	unsigned int x_stride;
-
+	clock_t start, finish;  
+   	double  duration;  
+	int i = 0;
 	/* get the framebuffer device handle */
 	fh = openFB(NULL);
 	if(fh == -1)
@@ -75,11 +79,18 @@ int fb_display(unsigned char *rgbbuff, unsigned char * alpha,
 
 	/* blit buffer 2 fb */
 	fbbuff = (unsigned char*)convertRGB2FB(fh, rgbbuff, x_size * y_size, var.bits_per_pixel, &bp);
+	start = clock();  
+	for(; i < 100; ++i)
+	{
 #if 0
 	blit2FB(fh, fbbuff, alpha, x_size, y_size, x_stride, var.yres, x_pan, y_pan, x_offs, y_offs, bp);
 #else
 	blit2FB(fh, fbbuff, alpha, x_size, y_size, x_stride, var.yres_virtual, x_pan, y_pan, x_offs, y_offs + var.yoffset, bp);
 #endif
+	}
+	finish = clock();
+	duration = (double)(finish - start) / CLOCKS_PER_SEC;  
+   	printf( "%f seconds\n", duration );  
 	free(fbbuff);
 
 	/* close device */

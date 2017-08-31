@@ -118,12 +118,13 @@ main() {
 	fi
 	if contains "$BUF" "_internal.info"; then
 
-	    ip=${STRING##*ip_address=}
+	    STRING=`ifconfig wlan0`
+
+	    ip=${STRING##*inet addr:}
 	    ip=`echo ${ip} | cut -d ' ' -f 1`
 	    echo "ip: $ip"
 
-	    STRING=`ifconfig ${ifname}`
-
+	    
 	    netmask=${STRING##*Mask:}
 	    netmask=`echo ${netmask} | cut -d ' ' -f 1`
 	    echo "netmask: $netmask"
