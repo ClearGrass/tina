@@ -902,6 +902,11 @@ light_twi_id            = 2
 light_twi_addr	        = 0x23
 bh1721_reset       	= port:PF1<1><default><default><0>
 
+[STS30_para]
+STS30_name              = "sts30"
+STS30_twi_id            = 2
+STS30_twi_addr	        = 0x4A
+
 [humiture_para]
 sht3x_reset              = port:PF3<1><default><default><0>
 
