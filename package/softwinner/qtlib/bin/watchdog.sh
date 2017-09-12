@@ -2,7 +2,7 @@
 now=`date '+%Y-%m-%d %H:%M:%S'`
 
 grepFlag='BranQt4'
-thisLog='/usr/bin/qtapp/watchlog.log'
+thisLog='/usr/bin/qtapp/watchdog.log'
 
 baseDir="/usr/bin/qtapp"
 sleepTime=5
