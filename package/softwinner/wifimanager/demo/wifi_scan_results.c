@@ -190,7 +190,7 @@ int main(int argv, char *argc[]){
     printf("***Start scan!***\n");
     printf("*********************************\n");
 
-	
+
     ret=( p_wifi_interface->start_scan(event_label));
      printf("ret of scan is %d\n", ret);
     if(ret==0)
@@ -202,7 +202,7 @@ int main(int argv, char *argc[]){
     else
     {
 	printf("start scan failed!\n");
-  
+
     }
 
 
@@ -221,9 +221,9 @@ int main(int argv, char *argc[]){
     else
     {
 	printf("Get_scan_results failed!\n");
-  
+
     }
-    
+
 
     return 0;
 }

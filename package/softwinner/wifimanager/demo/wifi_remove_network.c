@@ -170,7 +170,7 @@ int main(int argv, char *argc[]){
     //pthread_create(&app_scan_tid, NULL, &app_scan_task,(void *)p_wifi_interface);
 
     event_label++;
-	
+
      printf("The input string is %s\n",argc[2]);
     switch_int= atoi(argc[2]);
     printf("The switch_int is %d\n",switch_int);
@@ -183,7 +183,7 @@ int main(int argv, char *argc[]){
 	case 3: key_mgmt = WIFIMG_WEP; break;
        default: ; break;
     }
-	
+
     ret = (p_wifi_interface->remove_network(argc[1], key_mgmt));
 
     while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
@@ -196,6 +196,6 @@ int main(int argv, char *argc[]){
     printf("Wifi remove network test: Success!\n");
     printf("******************************\n");
     }
-	
+
     return 0;
 }

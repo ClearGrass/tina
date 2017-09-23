@@ -272,7 +272,9 @@ int wpa_conf_is_ap_connected(char *ssid, int *len)
     int ret = -1;
     char cmd[CMD_LEN+1] = {0};
     char reply[REPLY_BUF_SIZE] = {0};
-    char *p_c=NULL;
+    char *p_c=NULL, *p_str = NULL;
+    char *p_s=NULL, *p_e=NULL, *p=NULL;
+    int is_ap_connected = 0;
 
     strncpy(cmd, "LIST_NETWORKS", CMD_LEN);
     cmd[CMD_LEN] = '\0';
@@ -283,14 +285,21 @@ int wpa_conf_is_ap_connected(char *ssid, int *len)
         return -1;
     }
 
-    if ((p_c=strstr(reply, "CURRENT")) != NULL){
-        char *p_s=NULL, *p_e=NULL, *p=NULL;
+    p_str = (char *)reply;
+    while((p_c=strstr(p_str, "[CURRENT]")) != NULL){
+
+	if(*(p_c + 9) != '\n' && *(p_c + 9) != '\0')
+	{
+		p_str = p_c+9;
+		continue;
+	}
+
         p_e = strchr(p_c, '\n');
         if(p_e){
             *p_e = '\0';
         }
 
-        p_s = strrchr(reply, '\n');
+        p_s = strrchr(p_str, '\n');
         p_s++;
         p = strtok(p_s, "\t");
         p = strtok(NULL, "\t");
@@ -299,18 +308,19 @@ int wpa_conf_is_ap_connected(char *ssid, int *len)
                 strncpy(ssid, p, *len-1);
                 ssid[*len-1] = '\0';
                 *len = strlen(ssid);
+		is_ap_connected = 1;
+		break;
             }
         }
 
-        /* check ip exist */
-        ret = is_ip_exist();
-        if(ret > 0){
-            return 1;
-        }
+    }
 
-        return 0;
-    } else {
-        return 0;
+    /* check ip exist */
+    ret = is_ip_exist();
+    if(ret > 0){
+            return ret;
+    }else{
+        return is_ap_connected;
     }
 }
 

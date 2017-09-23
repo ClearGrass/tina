@@ -155,7 +155,7 @@ int main(int argv, char *argc[]){
     printf("*********************************\n");
 
     event_label = rand();
-	
+
     p_wifi_interface = aw_wifi_on(wifi_event_handle, event_label);
     if(p_wifi_interface == NULL){
         printf("wifi on failed event 0x%x\n", event);
@@ -194,12 +194,12 @@ int main(int argv, char *argc[]){
     printf("*********************************\n");
 
     ret = (p_wifi_interface->connect_ap_with_netid(argc[1], event_label));
-	
+
      printf("ret is %d", ret);
-	 
+
     if(ret==0)
     {
-    
+
 	printf("******************************\n");
        printf("Wifi connect ap with netid test: Success!\n");
        printf("******************************\n");
@@ -207,9 +207,8 @@ int main(int argv, char *argc[]){
     else
     {
 	printf("Wifi connect ap with netid test failed!\n");
-  
+
     }
-    
 
     return 0;
 }
