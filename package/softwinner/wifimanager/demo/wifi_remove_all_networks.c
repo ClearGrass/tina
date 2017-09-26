@@ -139,15 +139,18 @@ void *app_scan_task(void *args)
 }
 
 /*
- *argc[1]   ap ssid
- *argc[2]   ap passwd
+ *remove all networks in wpa_supplicant.conf
+ *
 */
 int main(int argv, char *argc[]){
-    int ret = 0, len = 0, i = 0;
+    int ret = 0;
     int times = 0, event_label = 0;
-    char ssid[256] = {0}, scan_results[4096] = {0}, reply[4069]= {0};
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
+
+    printf("\n*********************************\n");
+    printf("***Start wifi remove all networks test!***\n");
+    printf("*********************************\n");
 
     event_label = rand();
     p_wifi_interface = aw_wifi_on(wifi_event_handle, event_label);
@@ -161,50 +164,35 @@ int main(int argv, char *argc[]){
         usleep(2000000);
     }
 
-    //pthread_create(&app_scan_tid, NULL, &app_scan_task,(void *)p_wifi_interface);
-
     event_label++;
-/*    p_wifi_interface->connect_ap(argc[1], argc[2], event_label);
-
+    ret = (p_wifi_interface->disconnect_ap(event_label));
+    while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
+        printf("wifi state busing,waiting\n");
+        usleep(2000000);
+    }
+    while(aw_wifi_get_wifi_state() != WIFIMG_WIFI_DISCONNECTED && times < 5){
+        printf("wifi state is not disconnected\n");
+        times++;
+        usleep(2000000);
+    }
+    if(times >= 5){
+        printf("wifi state can not change to disconnected,remove all networks failed\n");
+        return -1;
+    }
+    event_label++;
+    ret = (p_wifi_interface->remove_all_networks());
     while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
         printf("wifi state busing,waiting\n");
         usleep(2000000);
     }
 
-    printf("******************************\n");
-    printf("Wifi connect ap test: Success!\n");
-    printf("******************************\n");
-
-
-
-
-    for(i=0;i<10;i++)
-   {
-	usleep(2000000);
-   }
-
-
-   */
-    printf("\n*********************************\n");
-    printf("***Start wifi list networks test!***\n");
-    printf("*********************************\n");
-
-
-    ret=( p_wifi_interface->list_networks(reply, sizeof(reply), event_label));
-     printf("ret is %d\n", ret);
-    if(ret==0)
+    if(ret == 0)
     {
-	printf("%s\n",reply);
-	printf("******************************\n");
-       printf("Wifi list networks test: Success!\n");
-       printf("******************************\n");
+    	printf("******************************\n");
+    	printf("Wifi remove all network test: Success!\n");
+    	printf("******************************\n");
     }
-    else
-    {
-	printf("list_networks failed!\n");
-
-    }
-
 
     return 0;
 }
+

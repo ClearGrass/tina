@@ -26,7 +26,7 @@ static int assoc_reject_count = 0;
 static int authentication_fail_count = 0;
 
 static void handle_event(int event, char * remainder) {
-    char netid_connected[4] = {0};
+    char netid_connected[NET_ID_LEN+1] = {0};
     char cmd[255] = {0}, reply[16]={0};
     int len = NET_ID_LEN+1;
     tWIFI_MACHINE_STATE state;
@@ -48,7 +48,7 @@ static void handle_event(int event, char * remainder) {
             if(netid_connecting[0] != '\0'){
                 /* get already connected netid */
                 wpa_conf_get_ap_connected(netid_connected, &len);
-                printf("connecting id %s, connected id %s\n", netid_connected, netid_connecting);
+                printf("connecting id %s, connected id %s\n", netid_connecting, netid_connected);
                 if(strcmp(netid_connected,netid_connecting) != 0){
                     /* send disconnect */
                     sprintf(cmd, "%s", "DISCONNECT");
@@ -107,7 +107,7 @@ static int dispatch_event(const char *event_str, int nread)
         return 0;
     }
 
-    name_start = (char *)((unsigned int)event_str+11);
+    name_start = (char *)((unsigned long)event_str+11);
     name_end = strchr(name_start, ' ');
     if(name_end){
         while((name_start < name_end) && (i < 15)){
@@ -145,9 +145,8 @@ static int dispatch_event(const char *event_str, int nread)
         event = UNKNOWN;
     }
 
-    event_data = (char *)((unsigned int)event_str);
+    event_data = (char *)((unsigned long)event_str);
     if(event == DRIVER_STATE || event == LINK_SPEED){
-        printf("DRIVER_STATE or LINK_SPEED, not handle\n");
         return 0;
     }else if(event == STATE_CHANGE || event == EAP_FAILURE){
         event_data = strchr(event_str, ' ');
@@ -193,11 +192,11 @@ static int dispatch_event(const char *event_str, int nread)
 
 void *event_handle_thread(void* args)
 {
-    int nread = 0, ret = 0;
-    char buf[EVENT_BUF_SIZE] = {0};
+	char buf[EVENT_BUF_SIZE] = {0};
+	int nread = 0, ret = 0;
 
     for(;;){
-        int nread = wifi_wait_for_event(buf, sizeof(buf));
+        nread = wifi_wait_for_event(buf, sizeof(buf));
         if (nread > 0) {
             ret = dispatch_event(buf, nread);
             if(ret == 1){
@@ -215,7 +214,7 @@ void wifi_event_loop(tWifi_event_callback pcb)
 {
     /* initial */
     wifi_event_inner = AP_DISCONNECTED;
-    pthread_create(&event_thread_id, NULL, &event_handle_thread, NULL);
+    pthread_create(&event_thread_id, NULL, event_handle_thread, NULL);
 }
 
 tWIFI_EVENT_INNER  get_cur_wifi_event()
@@ -277,7 +276,7 @@ void *check_connect_timeout(void *args)
 void start_check_connect_timeout(int first)
 {
     pthread_t check_timeout_id;
-    pthread_create(&check_timeout_id, NULL, &check_connect_timeout, NULL);
+    pthread_create(&check_timeout_id, NULL, check_connect_timeout, NULL);
 }
 
 void *wifi_on_check_connect_timeout(void *args)
@@ -314,7 +313,7 @@ void *wifi_on_check_connect_timeout(void *args)
 void start_wifi_on_check_connect_timeout()
 {
     pthread_t wifi_on_check_timeout_id;
-    pthread_create(&wifi_on_check_timeout_id, NULL, &wifi_on_check_connect_timeout, NULL);
+    pthread_create(&wifi_on_check_timeout_id, NULL, wifi_on_check_connect_timeout, NULL);
 }
 
 

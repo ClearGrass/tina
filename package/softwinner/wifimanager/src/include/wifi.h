@@ -72,8 +72,8 @@ int wifi_connect_to_supplicant();
 void wifi_close_supplicant_connection();
 
 /**
- * wifi_wait_for_event() performs a blocking call to 
- * get a Wi-Fi event and returns a string representing 
+ * wifi_wait_for_event() performs a blocking call to
+ * get a Wi-Fi event and returns a string representing
  * a Wi-Fi event when it occurs.
  *
  * @param buf is the buffer that receives the event
@@ -108,8 +108,8 @@ int wifi_command(const char *command, char *reply, size_t reply_len);
 
 /**
  * do_dhcp_request() issues a dhcp request and returns the acquired
- * information. 
- * 
+ * information.
+ *
  * All IPV4 addresses/mask are in network byte order.
  *
  * @param ipaddr return the assigned IPV4 address
@@ -158,7 +158,7 @@ int ensure_entropy_file_exists();
 
 /* Evaluate EXPRESSION, and repeat as long as it returns -1 with `errno'
     set to EINTR.  */
-#ifndef TEMP_FAILURE_RETRY    
+#ifndef TEMP_FAILURE_RETRY
 #define TEMP_FAILURE_RETRY(expression) \
    (__extension__                                                              \
      ({ long int __result;                                                     \

@@ -15,9 +15,9 @@ define Package/wifimanager/Default
   TITLE:=Tina wifi manager
   DEPENDS:=+libpthread +libstdcpp +liballwinner-base
 endef
- 
+
 define Package/wifimanager
-  $(call Package/wifimanager/Default) 
+  $(call Package/wifimanager/Default)
   MENU:=1
   DEFAULT:=1
 endef
@@ -35,7 +35,7 @@ endef
 define Package/wifimanager-demo/description
 	Tina wifi app demo
 endef
- 
+
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) -r ./src $(PKG_BUILD_DIR)/
@@ -57,7 +57,7 @@ define Build/Compile
 		CONFIG_PREFIX="$(PKG_INSTALL_DIR)" \
 		all
 
-  	#wifitest
+	#wifitest
 	$(MAKE) -C $(PKG_BUILD_DIR)/demo/ \
 		ARCH="$(TARGET_ARCH)" \
 		AR="$(TARGET_AR)" \
@@ -90,9 +90,9 @@ define Package/wifimanager/install
 endef
 
 define Package/wifimanager-demo/install
-	$(INSTALL_DIR) $(1)/bin        
+	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc/wifi
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_connect_ap_test $(1)/bin	
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_connect_ap_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_on_off_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_connect_chinese_ap_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_scan_results_test $(1)/bin
@@ -101,8 +101,10 @@ define Package/wifimanager-demo/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_connect_ap_with_netid_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_get_netid_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_add_network_test $(1)/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_longtime_test $(1)/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_remove_all_networks_test $(1)/bin
 	$(INSTALL_BIN) ./wifitest.sh $(1)/etc/wifi
 endef
 
 $(eval $(call BuildPackage,wifimanager))
-$(eval $(call BuildPackage,wifimanager-demo)) 
+$(eval $(call BuildPackage,wifimanager-demo))
