@@ -26,6 +26,8 @@ do
 		cd $baseDir
 		echo "$now process not exists,restart process now..." > "$thisLog"
 		./BranQt4 -qws -font &
+		proc=`pgrep BranQt4`
+		echo -17 > /proc/$proc/oom_adj
 		echo "$now restart done ......" > "$thisLog"
 		cd $curDir
 	else
