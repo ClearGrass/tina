@@ -60,7 +60,7 @@ typedef struct{
     int (*remove_network)(char *ssid, tKEY_MGMT key_mgmt);
     int (*remove_all_networks)(void);
     int (*list_networks)(char *reply, size_t reply_len, int event_label);
-	int (*get_netid)(const char *ssid, tKEY_MGMT key_mgmt, char *net_id);
+    int (*get_netid)(const char *ssid, tKEY_MGMT key_mgmt, char *net_id, int *length);
 }aw_wifi_interface_t;
 
 const aw_wifi_interface_t * aw_wifi_on(tWifi_event_callback pcb, int event_label);

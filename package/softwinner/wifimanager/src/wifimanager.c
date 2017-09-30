@@ -279,7 +279,7 @@ static int aw_wifi_add_network(const char *ssid, tKEY_MGMT key_mgmt, const char 
     }
 
     /* check already exist or connected */
-    len = 3;
+    len = NET_ID_LEN+1;
     is_exist = wpa_conf_is_ap_exist(p_ssid, key_mgmt, netid1, &len);
 
 	/* add network */
@@ -1572,16 +1572,21 @@ end:
 *Ap with certain key_mgmt exists in the .conf file:return is 0, get the *net_id as expectation;
 *else:return -1
 */
-static int aw_wifi_get_netid(const char *ssid, tKEY_MGMT key_mgmt, char *net_id)
+static int aw_wifi_get_netid(const char *ssid, tKEY_MGMT key_mgmt, char *net_idm, int *length)
 {
-	int ret = -1, len = 3;
+	int ret = -1, len = NET_ID_LEN+1;
 
+	if(*length > (NET_ID_LEN+1))
+		len = NET_ID_LEN+1;
+	else
+		len = *length;
 	/* pause scan thread */
 	pause_wifi_scan_thread();
 	ret = wpa_conf_is_ap_exist(ssid, key_mgmt, net_id, &len);
 	/* resume scan thread */
     resume_wifi_scan_thread();
 	if(ret == 1 || ret == 3){
+		*length = len;
 		return 0;
 	}else{
 		return -1;

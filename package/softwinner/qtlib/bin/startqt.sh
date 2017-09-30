@@ -46,6 +46,7 @@ export TSLIB_TSDEVICE=/dev/input/${TP_EVENT}
 echo sgpc1x 0x58 > /sys/bus/i2c/devices/i2c-2/new_device
 
 export QWS_DISPLAY=Transformed:Rot270
+hwclock -s
 
 Passed_File=/usr/bin/qtapp/etc/hodor_passed.txt
 Hodor_File=/usr/bin/qtapp/HodorApp

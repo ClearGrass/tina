@@ -146,8 +146,9 @@ int main(int argv, char *argc[]){
     int ret = -1, switch_int = -1;
     int event_label = 0;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
-	tKEY_MGMT key_mgmt = WIFIMG_NONE;
-	char net_id[4]={0};
+    tKEY_MGMT key_mgmt = WIFIMG_NONE;
+    char net_id[10]={0};
+    int id_len = sizeof(net_id);
 
     event_label = rand();
     p_wifi_interface = aw_wifi_on(wifi_event_handle, event_label);
@@ -178,14 +179,15 @@ int main(int argv, char *argc[]){
 	}
 
 
-    ret = ( p_wifi_interface->get_netid(argc[1], key_mgmt, net_id));
+    ret = p_wifi_interface->get_netid(argc[1], key_mgmt, net_id, &id_len);
     if(ret == 0){
-		printf("The netid of your network is %s\n",net_id);
-		printf("******************************\n");
+	printf("The netid of your network is %s\n",net_id);
+	printf("The length of netid is %d\n",id_len);
+	printf("******************************\n");
 	printf("Wifi get netid test: Success!\n");
 	printf("******************************\n");
     }else{
-		printf("get netid test failed!\n");
+	printf("get netid test failed!\n");
 
     }
 
