@@ -9,10 +9,10 @@ sync
 echo "ota shell log>>>" >> $LOG_PATH
 echo "start system update" >> $LOG_PATH
 
-proc=pgrep "BranQt4"
+proc=`pgrep BranQt4`
 echo "kill BranQt4,pid:$proc" >> $LOG_PATH
 kill -9 `ps -ef | grep "BranQt4" | grep -v \"grep\" | awk '{print $2}'`
-proc=pgrep "BranQt4"
+proc=`pgrep BranQt4`
 echo "current BranQt4 pid:$proc" >> $LOG_PATH
 
 echo "write_misc -s fail -v test1.0" >> $LOG_PATH
@@ -30,7 +30,7 @@ echo "rm all files except etc" >> $LOG_PATH
 for file in /overlay/usr/bin/qtapp/*
 do  
 	if [ -d "$file" ]  
-	then   
+	then  
 		if [ $file != "/overlay/usr/bin/qtapp/etc" ]
 		then
   			rm -rf $file
@@ -59,16 +59,13 @@ echo "status:$status" >> $LOG_PATH
 echo "version:$version" >> $LOG_PATH
 
 if [[ $command = "upgrade_end" ]] && [[ $status = "ok" ]];then
-
 	echo "ota success!!!" >> $LOG_PATH
 	echo "reboot" >> $LOG_PATH
-	echo "">>$LOG_PATH
-	echo "">>$LOG_PATH
 	reboot
-	exit
+else
+	echo "ota error!!!" >> $LOG_PATH
 fi
 
-echo "ota error!!!" >> $LOG_PATH
 echo "">>$LOG_PATH
 echo "">>$LOG_PATH
 
