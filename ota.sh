@@ -1,5 +1,6 @@
 #!/bin/sh
 
+mv public_key.pem /usr/bin/qtapp/etc/
 hwclock -w
 echo 0 > /dev/Boost_En
 now=`date '+%Y-%m-%d'`
