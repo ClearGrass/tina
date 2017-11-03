@@ -31,14 +31,28 @@ static int aw_wifi_add_event_callback(tWifi_event_callback pcb)
       return add_wifi_event_callback_inner(pcb);
 }
 
+/*
+*get wifi connection state with AP
+*return value:
+*1: connected with AP(connected to network IPv4)
+*2: connected with AP(connected to network IPv6)
+*0: disconnected with AP
+*/
 static int aw_wifi_is_ap_connected(char *ssid, int *len)
 {
+
     if(gwifi_state == WIFIMG_WIFI_DISABLED){
         return -1;
     }
 
-    return wpa_conf_is_ap_connected(ssid, len);
+    if( 4 == wpa_conf_is_ap_connected(ssid, len))
+	return 1;
+    else if( 6 == wpa_conf_is_ap_connected(ssid, len))
+	return 2;
+    else
+	return 0;
 }
+
 
 static int aw_wifi_scan(int event_label)
 {
@@ -451,7 +465,6 @@ static int aw_wifi_add_network(const char *ssid, tKEY_MGMT key_mgmt, const char 
     ret = wifi_command(cmd, reply, sizeof(reply));
     if(ret){
         printf("do set priority error!\n");
-
         /* cancel saved in wpa_supplicant.conf */
         sprintf(cmd, "REMOVE_NETWORK %s", netid2);
         wifi_command(cmd, reply, sizeof(reply));
@@ -514,7 +527,7 @@ static int aw_wifi_add_network(const char *ssid, tKEY_MGMT key_mgmt, const char 
 
 		if(get_assoc_reject_count() >= MAX_ASSOC_REJECT_COUNT){
 			reset_assoc_reject_count();
-			printf("wifi_connect_ap_inner: assoc reject %s times\n", MAX_ASSOC_REJECT_COUNT);
+			printf("wifi_connect_ap_inner: assoc reject %d times\n", MAX_ASSOC_REJECT_COUNT);
 			break;
 		}
 
@@ -848,7 +861,7 @@ static int wifi_connect_ap_inner(const char *ssid, tKEY_MGMT key_mgmt, const cha
 
 		if(get_assoc_reject_count() >= MAX_ASSOC_REJECT_COUNT){
 			reset_assoc_reject_count();
-			printf("wifi_connect_ap_inner: assoc reject %s times\n", MAX_ASSOC_REJECT_COUNT);
+			printf("wifi_connect_ap_inner: assoc reject %d times\n", MAX_ASSOC_REJECT_COUNT);
 			break;
 		}
 
@@ -1167,12 +1180,9 @@ const char *p_ssid = NULL;
 tWIFI_MACHINE_STATE  state;
 tWIFI_EVENT_INNER    event;
 
-
 if(gwifi_state == WIFIMG_WIFI_DISABLED){
 	return -1;
 }
-
-
 
 
 wifi_machine_state = get_wifi_machine_state();
@@ -1241,7 +1251,7 @@ disconnecting = 0;
 
 		 if(get_assoc_reject_count() >= MAX_ASSOC_REJECT_COUNT){
 			 reset_assoc_reject_count();
-			 printf("wifi_connect_ap_inner: assoc reject %s times\n", MAX_ASSOC_REJECT_COUNT);
+			 printf("wifi_connect_ap_inner: assoc reject %d times\n", MAX_ASSOC_REJECT_COUNT);
 			 break;
 		 }
 
@@ -1283,6 +1293,7 @@ end:
 	if(ret != 0){
 	call_event_callback_function(event_code, NULL, event_label);
 	}
+
    /* resume scan thread */
     resume_wifi_scan_thread();
 
@@ -1351,11 +1362,14 @@ static int aw_wifi_remove_network(char *ssid, tKEY_MGMT key_mgmt)
 
 static int aw_wifi_remove_all_networks()
 {
+    int ret = -1;
     if(gwifi_state == WIFIMG_WIFI_DISABLED){
         return -1;
     }
-
-    wpa_conf_remove_all_networks();
+    pause_wifi_scan_thread();
+    ret = wpa_conf_remove_all_networks();
+    resume_wifi_scan_thread();
+    return ret;
 }
 
 static int aw_wifi_connect_ap_auto(int event_label)
@@ -1523,7 +1537,7 @@ static int aw_wifi_list_networks(char *reply, size_t reply_len, int event_label)
         goto end;
     }
 
-
+	/*there is no network information in the supplicant.conf file now!*/
 	if(wpa_conf_network_info_exist() == 0){
 		ret = 0;
 		goto end;
@@ -1574,29 +1588,6 @@ static int aw_wifi_get_netid(const char *ssid, tKEY_MGMT key_mgmt, char *net_id)
 	}
 }
 
-static int aw_wifi_pause_scan(void)
-{
-	if(gwifi_state == WIFIMG_WIFI_DISABLED){
-		return -1;
-	}
-
-	pause_wifi_scan_thread();
-	return 0;
-
-}
-
-static int aw_wifi_resume_scan(void)
-{
-	if(gwifi_state == WIFIMG_WIFI_DISABLED){
-		return -1;
-	}
-
-	resume_wifi_scan_thread();
-	return 0;
-
-}
-
-
 static const aw_wifi_interface_t aw_wifi_interface = {
     aw_wifi_add_event_callback,
     aw_wifi_is_ap_connected,
@@ -1611,15 +1602,13 @@ static const aw_wifi_interface_t aw_wifi_interface = {
     aw_wifi_remove_network,
     aw_wifi_remove_all_networks,
     aw_wifi_list_networks,
-    aw_wifi_get_netid,
-    aw_wifi_pause_scan,
-    aw_wifi_resume_scan
+    aw_wifi_get_netid
 };
 
 const aw_wifi_interface_t * aw_wifi_on(tWifi_event_callback pcb, int event_label)
 {
-    int i = 0, ret = -1, connected = 0, len = 3;
-    char netid[4];
+    int i = 0, ret = -1, connected = 0, len = 64;
+    char ssid[64];
 
     if(gwifi_state != WIFIMG_WIFI_DISABLED){
         return NULL;
@@ -1659,11 +1648,11 @@ const aw_wifi_interface_t * aw_wifi_on(tWifi_event_callback pcb, int event_label
     if(wpa_conf_network_info_exist() == 1){
         set_wifi_machine_state(CONNECTING_STATE);
 	  /* wpa_supplicant already run by other process and connected an ap */
-        connected = wpa_conf_is_ap_connected(netid, &len);
-        if(connected == 1){
+        connected = wpa_conf_is_ap_connected(ssid, &len);
+        if(connected >= 4){
             set_wifi_machine_state(CONNECTED_STATE);
-			set_cur_wifi_event(AP_CONNECTED);
-			call_event_callback_function(WIFIMG_NETWORK_CONNECTED, NULL, event_label);
+	    set_cur_wifi_event(AP_CONNECTED);
+	    call_event_callback_function(WIFIMG_NETWORK_CONNECTED, NULL, event_label);
             ret = 0;
         }else{
             connecting_ap_event_label = event_label;
@@ -1697,7 +1686,7 @@ int aw_wifi_off(const aw_wifi_interface_t *p_wifi_interface)
         return 0;
     }
 
-	stop_wifi_scan_thread();
+    stop_wifi_scan_thread();
     wifi_close_supplicant_connection();
     wifi_stop_supplicant(0);
     reset_wifi_event_callback();
@@ -1708,7 +1697,7 @@ int aw_wifi_off(const aw_wifi_interface_t *p_wifi_interface)
 int aw_wifi_get_wifi_state()
 {
     int ret = -1, len = 0;
-    char netid[4] = {0};
+    char ssid[64] = {0};
     tWIFI_MACHINE_STATE machine_state;
     int tmp_state;
 
@@ -1722,9 +1711,9 @@ int aw_wifi_get_wifi_state()
         }
 
 	  /* sync wifi state by wpa_supplicant */
-	  len = 3;
-        ret = aw_wifi_is_ap_connected(netid, &len);
-        if(ret == 1){
+	len = sizeof(ssid);
+	ret = wpa_conf_is_ap_connected(ssid, &len);
+        if(ret >= 4){
             tmp_state = WIFIMG_WIFI_CONNECTED;
         }else{
             tmp_state = WIFIMG_WIFI_DISCONNECTED;

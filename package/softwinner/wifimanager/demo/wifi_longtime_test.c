@@ -9,6 +9,8 @@
 #include <wifi_intf.h>
 #include <pthread.h>
 
+#define TEST_TIMES 1001
+
 static pthread_t  app_scan_tid;
 static int event = WIFIMG_NETWORK_DISCONNECTED;
 
@@ -141,13 +143,36 @@ void *app_scan_task(void *args)
 /*
  *argc[1]   ap ssid
  *argc[2]   ap passwd
+ *agrc[3]   [test times]
+ *see the test result in file:/etc/test_result
 */
 int main(int argv, char *argc[]){
-    int ret = 0, len = 0, i = 0;
-    int times = 0, event_label = 0;
-    char ssid[256] = {0}, scan_results[4096] = {0}, reply[4069]= {0};
+    int i = 0, ret = 0, len = 0;
+    int times = 0, event_label = 0;;
+    char ssid[256] = {0}, scan_results[4096] = {0};
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
+	int success_times = 0, fail_times = 0, timeout_times = 0;
+	char prt_buf[256] = {0};
+	int ttest_times = 0;
+
+	if(NULL == argc[1]){
+		printf("Usage:wifi_long_test <ssid> <psk> [test_times]!\n");
+		printf("default test times: %d\n",TEST_TIMES);
+		return -1;
+	}
+	if(NULL == argc[3])
+		ttest_times = TEST_TIMES;
+	else
+		ttest_times = atoi(argc[3]);
+
+    printf("\n*********************************\n");
+    printf("***Start wifi long test!***\n");
+    printf("*********************************\n");
+
+	printf("Test times: %d\n",ttest_times);
+
+	sleep(2);
 
     event_label = rand();
     p_wifi_interface = aw_wifi_on(wifi_event_handle, event_label);
@@ -162,49 +187,47 @@ int main(int argv, char *argc[]){
     }
 
     //pthread_create(&app_scan_tid, NULL, &app_scan_task,(void *)p_wifi_interface);
+	for(i=0;i<ttest_times;i++){
+		event_label++;
+		p_wifi_interface->connect_ap(argc[1], argc[2], event_label);
 
-    event_label++;
-/*    p_wifi_interface->connect_ap(argc[1], argc[2], event_label);
+	while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
+		printf("wifi state busing,waiting\n");
+		usleep(2000000);
+	}
 
-    while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
-        printf("wifi state busing,waiting\n");
-        usleep(2000000);
-    }
+		if(event == WIFIMG_NETWORK_CONNECTED || event == WIFIMG_CONNECT_TIMEOUT)
+		{
+			success_times++;
+			if(event == WIFIMG_CONNECT_TIMEOUT)
+				timeout_times++;
+		}
+		else
+		{
+			fail_times++;
+		}
+		printf("Test Times: %d\nSuccess Times: %d\nFailed Times: %d\n",i+1,success_times,fail_times);
+
+		event_label++;
+		p_wifi_interface->disconnect_ap(event_label);
+
+	while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
+		printf("wifi state busing,waiting\n");
+		usleep(2000000);
+	}
+	}
+
+	sprintf(prt_buf,"echo \"Test Times:%d, Success Times:%d(including get IP timeout times:%d), Failed Times:%d\" > /etc/test_results",i,success_times,timeout_times,fail_times);
+	system(prt_buf);
+	if(success_times == ttest_times)
+	{
+	sprintf(prt_buf,"echo Congratulations! >> /etc/test_results");
+	system(prt_buf);
+	}
 
     printf("******************************\n");
     printf("Wifi connect ap test: Success!\n");
     printf("******************************\n");
-
-
-
-
-    for(i=0;i<10;i++)
-   {
-	usleep(2000000);
-   }
-
-
-   */
-    printf("\n*********************************\n");
-    printf("***Start wifi list networks test!***\n");
-    printf("*********************************\n");
-
-
-    ret=( p_wifi_interface->list_networks(reply, sizeof(reply), event_label));
-     printf("ret is %d\n", ret);
-    if(ret==0)
-    {
-	printf("%s\n",reply);
-	printf("******************************\n");
-       printf("Wifi list networks test: Success!\n");
-       printf("******************************\n");
-    }
-    else
-    {
-	printf("list_networks failed!\n");
-
-    }
-
 
     return 0;
 }

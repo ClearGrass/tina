@@ -23,5 +23,3 @@ int get_key_mgmt(const char *ssid, int key_mgmt_info[]);
 #endif
 
 #endif /* __NETWORK_MANAGER_H */
-
-

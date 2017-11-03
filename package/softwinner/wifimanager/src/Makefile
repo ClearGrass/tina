@@ -20,4 +20,3 @@ $(target): $(SRCS) libwpa_cli.a
 all: install $(target)
 clean:
 	rm -rf $(target)
-
