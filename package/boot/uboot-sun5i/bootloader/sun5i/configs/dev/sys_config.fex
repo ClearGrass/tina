@@ -907,6 +907,11 @@ STS30_name              = "sts30"
 STS30_twi_id            = 2
 STS30_twi_addr	        = 0x4A
 
+[STS30_2_para]
+STS30_2_name              = "sts30_2"
+STS30_2_twi_id            = 2
+STS30_2_twi_addr	  = 0x4B
+
 [humiture_para]
 sht3x_reset              = port:PF3<1><default><default><0>
 
