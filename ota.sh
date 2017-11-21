@@ -1,6 +1,6 @@
 #!/bin/sh
 
-mv public_key.pem /usr/bin/qtapp/etc/
+mv /mnt/UDISK/BranQt4.db /usr/bin/qtapp/etc/
 hwclock -w
 echo 0 > /dev/Boost_En
 now=`date '+%Y-%m-%d'`
@@ -69,5 +69,5 @@ fi
 
 echo "">>$LOG_PATH
 echo "">>$LOG_PATH
-
+reboot
 

@@ -998,7 +998,7 @@ pmu_usbcur               = 0
 pmu_usbvol_pc            = 4000
 pmu_usbcur_pc            = 900
 
-pmu_pwroff_vol           = 3200
+pmu_pwroff_vol           = 2900
 pmu_pwron_vol            = 2900
 
 pmu_pekoff_time          = 8000
@@ -1017,7 +1017,7 @@ pmu_suspend_chgcur2      = 1200
 pmu_resume_chgcur2       = 400
 pmu_shutdown_chgcur2     = 1200
 
-pmu_suspendpwroff_vol    = 3150
+pmu_suspendpwroff_vol    = 2900
 
 pmu_batdeten		 = 1
 [recovery_key]

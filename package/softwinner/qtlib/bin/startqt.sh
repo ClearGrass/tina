@@ -47,15 +47,13 @@ echo sgpc1x 0x58 > /sys/bus/i2c/devices/i2c-2/new_device
 
 export QWS_DISPLAY=Transformed:Rot270
 hwclock -s
-
+echo 0 > /usr/bin/qtapp/etc/wifi.flag
 Passed_File=/usr/bin/qtapp/etc/hodor_passed.txt
 Hodor_File=/usr/bin/qtapp/HodorApp
 if [ ! -f $Passed_File ] && [ -f $Hodor_File ]; then
 /usr/bin/qtapp/HodorApp -qws &
 else
 /usr/bin/qtapp/watchdog.sh &
-#/usr/bin/qtapp/miio/miio_client -D
-#/usr/bin/qtapp/miio/miio_client_helper_nomqtt.sh &
 fi
 
 

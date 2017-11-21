@@ -1,12 +1,7 @@
 #!/bin/sh
 
-WIFI_START_SCRIPT="/the_path_to/wifi_start.sh"
 MIIO_RECV_LINE="/usr/bin/qtapp/miio/miio_recv_line"
 MIIO_SEND_LINE="/usr/bin/qtapp/miio/miio_send_line"
-WIFI_MAX_RETRY=5
-WIFI_RETRY_INTERVAL=3
-WIFI_SSID=
-
 
 
 GLIBC_TIMEZONE_DIR="/usr/share/zoneinfo"
@@ -38,10 +33,6 @@ send_helper_ready() {
     $MIIO_SEND_LINE "$ready_msg"
 }
 
-req_wifi_conf_status() {
-    REQ_WIFI_CONF_STATUS_RESPONSE="{\"method\":\"_internal.res_wifi_conf_status\",\"params\":1}"
-}
-
 request_dinfo() {
 
     dinfo_file="/usr/bin/qtapp/etc/device.conf"
@@ -70,6 +61,7 @@ request_dinfo() {
 }
 
 request_dtoken() {
+
     dtoken_string=$1
     dtoken_token=${dtoken_string##*ntoken\":\"}
     dtoken_token=${dtoken_token%%\"*}
@@ -81,17 +73,8 @@ request_dtoken() {
     else
 	echo ${dtoken_token} > ${dtoken_file}
     fi
-    
     RESPONSE_DTOKEN="{\"method\":\"_internal.response_dtoken\",\"params\":\"${dtoken_token}\"}"
     RESPONSE_DCOUNTRY="{\"method\":\"_internal.response_dcountry\",\"params\":\"\"}"
-}
-
-save_wifi_conf() {
-    echo "save_wifi_conf"
-}
-
-clear_wifi_conf() {
-    echo "clear_wifi_conf"
 }
 
 save_tz_conf() {
@@ -103,10 +86,6 @@ save_tz_conf() {
 	else
 		echo "timezone is not exist:$new_tz"
 	fi
-}
-
-sanity_check() {
-    echo "sanity_check"
 }
 
 main() {
@@ -124,7 +103,10 @@ main() {
 	    ip=`echo ${ip} | cut -d ' ' -f 1`
 	    echo "ip: $ip"
 
-	    
+	    wifi_file="/usr/bin/qtapp/etc/wifi.conf"
+	    ssid=`cat $wifi_file | grep -v ^# | grep ssid= | tail -1 | cut -d '=' -f 2`
+    	    bssid=`cat $wifi_file | grep -v ^# | grep mac= | tail -1 | cut -d '=' -f 2`
+
 	    netmask=${STRING##*Mask:}
 	    netmask=`echo ${netmask} | cut -d ' ' -f 1`
 	    echo "netmask: $netmask"
@@ -143,7 +125,7 @@ main() {
 	    msg="{\"method\":\"_internal.info\",\"partner_id\":\"\",\"params\":{\
 \"hw_ver\":\"Linux\",\"fw_ver\":\"$sw_version\",\
 \"ap\":{\
- \"ssid\":\"\",\"bssid\":\"\"\
+ \"ssid\":\"$ssid\",\"bssid\":\"$bssid\"\
 },\
 \"netif\":{\
  \"localIp\":\"$ip\",\"mask\":\"$netmask\",\"gw\":\"$gw\"\
@@ -153,11 +135,19 @@ main() {
 	    $MIIO_SEND_LINE "$msg"
 	elif contains "$BUF" "_internal.req_wifi_conf_status"; then
 	    echo "Got _internal.req_wifi_conf_status"
-	    req_wifi_conf_status "$BUF"
+	    ret=`cat /usr/bin/qtapp/etc/wifi.flag`
+	    if [ $ret -eq 1 ];then
+		REQ_WIFI_CONF_STATUS_RESPONSE="{\"method\":\"_internal.res_wifi_conf_status\",\"params\":1}"
+	    else
+		REQ_WIFI_CONF_STATUS_RESPONSE="{\"method\":\"_internal.res_wifi_conf_status\",\"params\":0}"
+	    fi
 	    echo $REQ_WIFI_CONF_STATUS_RESPONSE
 	    $MIIO_SEND_LINE "$REQ_WIFI_CONF_STATUS_RESPONSE"
 	elif contains "$BUF" "_internal.wifi_start"; then
 	    echo "Got _internal.wifi_start"
+	    RESPONSE_DWIFI="{\"method\":\"_internal.wifi_ap_mode\",\"params\":null}"
+	    echo $RESPONSE_DWIFI
+	    $MIIO_SEND_LINE "$RESPONSE_DWIFI"
 	elif contains "$BUF" "_internal.request_dinfo"; then
 	    echo "Got _internal.request_dinfo"
 	    request_dinfo "$BUF"
@@ -182,6 +172,5 @@ main() {
     done
 }
 
-sanity_check
 send_helper_ready
 main
