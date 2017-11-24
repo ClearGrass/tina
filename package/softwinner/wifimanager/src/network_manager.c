@@ -19,6 +19,7 @@ static int  scan_running = 0;
 static pthread_mutex_t scan_mutex;
 static pthread_cond_t  scan_cond;
 static int  scan_pause = 0;
+static int  scan_error = 0;
 
 /* run scan immediately */
 static pthread_mutex_t thread_run_mutex;
@@ -36,6 +37,7 @@ int update_scan_results()
     printf("update scan results enter\n");
 
     pthread_mutex_lock(&thread_run_mutex);
+    printf("=====%s: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
     scan_completed = 0;
     pthread_cond_signal(&thread_run_cond);
     pthread_mutex_unlock(&thread_run_mutex);
@@ -54,8 +56,16 @@ int get_scan_results_inner(char *result, int *len)
 {
     int index = 0;
     char *ptr = NULL;
+    int ret = 0;
 
     pthread_mutex_lock(&scan_mutex);
+    printf("=====%s: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
+
+    if(0 != scan_error)
+    {
+//        prinf("%s: scan or scan_results ERROR in scan_thread!\n", __func__);
+        ret = -1;
+    }
 
     if(*len <= scan_results_len){
         strncpy(result, scan_results, *len-1);
@@ -72,7 +82,7 @@ int get_scan_results_inner(char *result, int *len)
 
     pthread_mutex_unlock(&scan_mutex);
 
-    return 0;
+    return ret;
 }
 
 int is_network_exist(const char *ssid, tKEY_MGMT key_mgmt)
@@ -207,8 +217,10 @@ void *wifi_scan_thread(void *args)
 
         /* scan cmd */
         strncpy(cmd, "SCAN", 15);
+        printf("=====%s do scan: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
         ret = wifi_command(cmd, reply, sizeof(reply));
         if(ret){
+            scan_error = 1;
             pthread_mutex_unlock(&scan_mutex);
             usleep(5000*1000);
             continue;
@@ -225,18 +237,20 @@ void *wifi_scan_thread(void *args)
         if(get_scan_status() == 1){
             strncpy(cmd, "SCAN_RESULTS", 15);
             cmd[15] = '\0';
+            printf("=====%s do scan_reusults: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
             ret = wifi_command(cmd, scan_results, sizeof(scan_results));
             if(ret){
+                scan_error = 1;
                 printf("do scan results error!\n");
                 pthread_mutex_unlock(&scan_mutex);
                 continue;
             }
             scan_results_len =  strlen(scan_results);
+            scan_error = 0;
             //printf("scan results len2 %d\n", scan_results_len);
             //printf("scan results2\n");
             //printf("%s\n", scan_results);
         }
-
         pthread_mutex_unlock(&scan_mutex);
 
         //wait run singal or timeout 15s

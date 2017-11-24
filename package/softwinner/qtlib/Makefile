@@ -108,6 +108,7 @@ define Package/qtlib/install
 	$(INSTALL_BIN) ./bin/watchdog.sh 	$(1)/usr/bin/qtapp/watchdog.sh
 	$(INSTALL_BIN) ./bin/esp_fcc.conf 	$(1)/usr/bin/esp_fcc.conf
 	$(INSTALL_BIN) ./bin/public_key.pem 	$(1)/usr/bin/qtapp/etc/public_key.pem
+	$(INSTALL_BIN) ./bin/BranQt4.db 	$(1)/usr/bin/qtapp/etc/BranQt4.db
 
 
 endef
