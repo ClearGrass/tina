@@ -1,6 +1,5 @@
 #!/bin/sh
 
-mv /mnt/UDISK/BranQt4.db /usr/bin/qtapp/etc/
 hwclock -w
 echo 0 > /dev/Boost_En
 now=`date '+%Y-%m-%d'`
