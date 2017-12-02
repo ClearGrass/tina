@@ -140,6 +140,24 @@ void *app_scan_task(void *args)
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_longtime_test\n");
+	printf("DESCRIPTION:\n\tTest the stability of wifi module(see the test result in file:/etc/test_result).\n");
+	printf("USAGE:\n\twifi_add_network_test <ssid> <passwd> [test_times]\n");
+	printf("PARAMS:\n\tssid       : ssid of the AP\n");
+	printf("\tpasswd     : Password of the AP\n");
+	printf("\ttest_times : test times of the action(connect AP and disconnect AP)\n");
+	printf("\t             default test times: %d\n",TEST_TIMES);
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_longtime_test --help\n");
+	printf("\twifi_longtime_test -h\n");
+	printf("\twifi_longtime_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
+
 /*
  *argc[1]   ap ssid
  *argc[2]   ap passwd
@@ -156,9 +174,15 @@ int main(int argv, char *argc[]){
 	char prt_buf[256] = {0};
 	int ttest_times = 0;
 
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
 	if(NULL == argc[1]){
-		printf("Usage:wifi_long_test <ssid> <psk> [test_times]!\n");
-		printf("default test times: %d\n",TEST_TIMES);
+		//printf("Usage:wifi_long_test <ssid> <psk> [test_times]!\n");
+		//printf("default test times: %d\n",TEST_TIMES);
+		print_help();
 		return -1;
 	}
 	if(NULL == argc[3])

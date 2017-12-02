@@ -139,9 +139,45 @@ void *app_scan_task(void *args)
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_remove_network_test\n");
+	printf("DESCRIPTION:\n\tremove the network in wpa_supplicant.conf.\n");
+	printf("USAGE:\n\twifi_remove_network_test <ssid> <key_mgmt>\n");
+	printf("PARAMS:\n\tssid     : ssid of the AP\n");
+	printf("\tkey_mgmt : encryption method of the AP\n");
+	printf("\t\t0 : NONE\n");
+	printf("\t\t1 : key_mgmt = WPA_PSK\n");
+	printf("\t\t2 : key_mgmt = WPA2_PSK\n");
+	printf("\t\t3 : key_mgmt = WEP\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_remove_network_test --help\n");
+	printf("\twifi_remove_network_test -h\n");
+	printf("\twifi_remove_network_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
+
+
+int check_params(int num, char *str[]){
+	if(num != 3){
+		printf("ERROR: params more or less!\n");
+		return -1;
+	}
+
+	int mgmt = atoi(str[2]);
+	if(mgmt >= 0 && mgmt <= 3){
+		return 0;
+	}else{
+		printf("ERROR: key_mgmt not allowed\n");
+		return -1;
+	}
+}
+
 /*
  *argc[1]   ap ssid
- *argc[2]   ap passwd
+ *argc[2]   ap key_mgmt
 */
 int main(int argv, char *argc[]){
     int ret = 0, switch_int = 0;
@@ -150,6 +186,16 @@ int main(int argv, char *argc[]){
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
     tKEY_MGMT key_mgmt = WIFIMG_NONE;
+
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(check_params(argv, argc)){
+		print_help();
+		return -1;
+	}
 
     printf("\n*********************************\n");
     printf("***Start wifi remove network test!***\n");

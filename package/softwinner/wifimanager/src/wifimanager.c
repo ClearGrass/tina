@@ -40,17 +40,33 @@ static int aw_wifi_add_event_callback(tWifi_event_callback pcb)
 */
 static int aw_wifi_is_ap_connected(char *ssid, int *len)
 {
+    int ret = 0;
+    tWIFI_MACHINE_STATE wifi_machine_state;
 
     if(gwifi_state == WIFIMG_WIFI_DISABLED){
         return -1;
     }
 
+    wifi_machine_state = get_wifi_machine_state();
+    if(wifi_machine_state != CONNECTED_STATE && wifi_machine_state != DISCONNECTED_STATE){
+        printf("%s: wifi_busing, please try again later!\n", __func__);
+	return -1;
+    }
+
+    /* pase scan thread */
+    pause_wifi_scan_thread();
+
     if( 4 == wpa_conf_is_ap_connected(ssid, len))
-	return 1;
+	ret = 1;
     else if( 6 == wpa_conf_is_ap_connected(ssid, len))
-	return 2;
+	ret = 2;
     else
-	return 0;
+	ret = 0;
+
+    /* resume scan thread */
+    resume_wifi_scan_thread();
+
+    return ret;
 }
 
 
@@ -86,8 +102,13 @@ static int aw_wifi_get_scan_results(char *result, int *len)
         return -1;
     }
 
-    get_scan_results_inner(result, len);
-    return 0;
+    if(get_scan_results_inner(result, len) != 0)
+    {
+        printf("%s: There is a scan or scan_results error, Please try scan again later!\n", __func__);
+        return -1;
+    }
+    else
+        return 0;
 }
 
 /* check wpa/wpa2 passwd is right */
@@ -222,11 +243,11 @@ static int aw_wifi_add_network(const char *ssid, tKEY_MGMT key_mgmt, const char 
     int i=0, ret = -1, len = 0, max_prio = -1;
     char cmd[CMD_LEN+1] = {0};
     char reply[REPLY_BUF_SIZE] = {0}, netid1[NET_ID_LEN+1]={0}, netid2[NET_ID_LEN+1] = {0};
-	int is_exist = 0;
+    int is_exist = 0;
     tWIFI_MACHINE_STATE wifi_machine_state;
     const char *p_ssid = NULL;
-	tWIFI_MACHINE_STATE  state;
-	tWIFI_EVENT_INNER    event;
+    tWIFI_MACHINE_STATE  state;
+    tWIFI_EVENT_INNER    event;
 
     if(gwifi_state == WIFIMG_WIFI_DISABLED){
         return -1;
@@ -279,7 +300,7 @@ static int aw_wifi_add_network(const char *ssid, tKEY_MGMT key_mgmt, const char 
     }
 
     /* check already exist or connected */
-    len = 3;
+    len = NET_ID_LEN+1;
     is_exist = wpa_conf_is_ap_exist(p_ssid, key_mgmt, netid1, &len);
 
 	/* add network */
@@ -1312,6 +1333,7 @@ static int aw_wifi_remove_network(char *ssid, tKEY_MGMT key_mgmt)
     char cmd[CMD_LEN+1] = {0};
     char reply[REPLY_BUF_SIZE] = {0};
     char net_id[NET_ID_LEN+1] = {0};
+    tWIFI_MACHINE_STATE wifi_machine_state;
 
     if(gwifi_state == WIFIMG_WIFI_DISABLED){
         return -1;
@@ -1320,6 +1342,12 @@ static int aw_wifi_remove_network(char *ssid, tKEY_MGMT key_mgmt)
     if(!ssid || !ssid[0]){
         printf("Error: ssid is null!\n");
         return -1;
+    }
+
+    wifi_machine_state = get_wifi_machine_state();
+    if(wifi_machine_state != CONNECTED_STATE && wifi_machine_state != DISCONNECTED_STATE){
+        printf("%s: wifi_busing, please try again later!\n", __func__);
+	return -1;
     }
 
     /* pause scan thread */
@@ -1363,9 +1391,18 @@ static int aw_wifi_remove_network(char *ssid, tKEY_MGMT key_mgmt)
 static int aw_wifi_remove_all_networks()
 {
     int ret = -1;
+    tWIFI_MACHINE_STATE wifi_machine_state;
+
     if(gwifi_state == WIFIMG_WIFI_DISABLED){
         return -1;
     }
+
+    wifi_machine_state = get_wifi_machine_state();
+    if(wifi_machine_state != CONNECTED_STATE && wifi_machine_state != DISCONNECTED_STATE){
+        printf("%s: wifi_busing, please try again later!\n", __func__);
+	return -1;
+    }
+
     pause_wifi_scan_thread();
     ret = wpa_conf_remove_all_networks();
     resume_wifi_scan_thread();
@@ -1572,20 +1609,38 @@ end:
 *Ap with certain key_mgmt exists in the .conf file:return is 0, get the *net_id as expectation;
 *else:return -1
 */
-static int aw_wifi_get_netid(const char *ssid, tKEY_MGMT key_mgmt, char *net_id)
+static int aw_wifi_get_netid(const char *ssid, tKEY_MGMT key_mgmt, char *net_id, int *length)
 {
-	int ret = -1, len = 3;
+	int ret = -1, len = NET_ID_LEN+1;
+
+	if(*length > (NET_ID_LEN+1))
+	    len = NET_ID_LEN+1;
+	else
+	    len = *length;
 
 	/* pause scan thread */
 	pause_wifi_scan_thread();
 	ret = wpa_conf_is_ap_exist(ssid, key_mgmt, net_id, &len);
 	/* resume scan thread */
-    resume_wifi_scan_thread();
+	resume_wifi_scan_thread();
 	if(ret == 1 || ret == 3){
+		*length = len;
 		return 0;
 	}else{
 		return -1;
 	}
+}
+
+static int aw_wifi_stop_scan()
+{
+    shutdown_wifi_scan_thread();
+    return 0;
+}
+
+static int aw_wifi_restart_scan()
+{
+    restart_wifi_scan_thread();
+    return 0;
 }
 
 static const aw_wifi_interface_t aw_wifi_interface = {
@@ -1602,7 +1657,9 @@ static const aw_wifi_interface_t aw_wifi_interface = {
     aw_wifi_remove_network,
     aw_wifi_remove_all_networks,
     aw_wifi_list_networks,
-    aw_wifi_get_netid
+    aw_wifi_get_netid,
+    aw_wifi_stop_scan,
+    aw_wifi_restart_scan
 };
 
 const aw_wifi_interface_t * aw_wifi_on(tWifi_event_callback pcb, int event_label)

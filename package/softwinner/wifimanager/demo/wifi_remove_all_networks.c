@@ -138,6 +138,20 @@ void *app_scan_task(void *args)
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_remove_all_networks_test\n");
+	printf("DESCRIPTION:\n\tremove all the networks in wpa_supplicant.conf.\n");
+	printf("\nUSAGE:\n\twifi_remove_all_networks_test\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_remove_all_networks_test --help\n");
+	printf("\twifi_remove_all_networks_test -h\n");
+	printf("\twifi_remove_all_networks_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
+
 /*
  *remove all networks in wpa_supplicant.conf
  *
@@ -147,6 +161,17 @@ int main(int argv, char *argc[]){
     int times = 0, event_label = 0;
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
+
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(argv != 1){
+		printf("ERROR:No need other params\n");
+		print_help();
+		return -1;
+	}
 
     printf("\n*********************************\n");
     printf("***Start wifi remove all networks test!***\n");

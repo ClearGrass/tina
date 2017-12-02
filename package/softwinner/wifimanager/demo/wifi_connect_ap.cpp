@@ -138,6 +138,32 @@ void *app_scan_task(void *args)
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_connect_ap_test\n");
+	printf("DESCRIPTION:\n\tconnect the AP when don't konw the key_mgmt.\n");
+	printf("USAGE:\n\twifi_connect_ap_test <ssid> <passwd>\n");
+	printf("PARAMS:\n\tssid   : ssid of the AP\n");
+	printf("\tpasswd : password of the AP\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_connect_ap_test --help\n");
+	printf("\twifi_connect_ap_test -h\n");
+	printf("\twifi_connect_ap_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
+
+
+int check_params(int num, char *str[]){
+	if(num != 3 ){
+		printf("ERROR: params more or less!\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 /*
  *argc[1]   ap ssid
  *argc[2]   ap passwd
@@ -148,6 +174,16 @@ int main(int argv, char *argc[]){
     char ssid[256] = {0}, scan_results[4096] = {0};
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
+
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(check_params(argv, argc)){
+		print_help();
+		return -1;
+	}
 
     printf("\n*********************************\n");
     printf("***Start wifi connect ap test!***\n");

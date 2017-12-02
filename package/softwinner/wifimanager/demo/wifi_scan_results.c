@@ -139,9 +139,22 @@ void *app_scan_task(void *args)
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_scan_results_test\n");
+	printf("DESCRIPTION:\n\tget a list of scanned APs.\n");
+	printf("USAGE:\n\twifi_scan_results_test\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_scan_results_test --help\n");
+	printf("\twifi_scan_results_test -h\n");
+	printf("\twifi_scan_results_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
 /*
- *argc[1]   ap ssid
- *argc[2]   ap passwd
+ *
+ *
 */
 int main(int argv, char *argc[]){
     int ret = 0, len = 0, i = 0;
@@ -149,6 +162,17 @@ int main(int argv, char *argc[]){
     char ssid[256] = {0}, scan_results[4096] = {0}, reply[4069]= {0};
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
+
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(argv != 1){
+		printf("ERROR: No need other params!\n");
+		print_help();
+		return -1;
+	}
 
     event_label = rand();
     p_wifi_interface = aw_wifi_on(wifi_event_handle, event_label);

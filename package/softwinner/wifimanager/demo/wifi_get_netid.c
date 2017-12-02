@@ -138,6 +138,43 @@ void *app_scan_task(void *args)
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_get_netid_test\n");
+	printf("DESCRIPTION:\n\tget the netid of the AP.\n");
+	printf("USAGE:\n\twifi_get_netid_test <ssid> <key_mgmt>\n");
+	printf("PARAMS:\n\tssid     : ssid of the AP\n");
+	printf("\tkey_mgmt : encryption method of the AP\n");
+	printf("\t\t0 : NONE\n");
+	printf("\t\t1 : key_mgmt = WPA_PSK\n");
+	printf("\t\t2 : key_mgmt = WPA2_PSK\n");
+	printf("\t\t3 : key_mgmt = WEP\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_get_netid_test --help\n");
+	printf("\twifi_get_netid_test -h\n");
+	printf("\twifi_get_netid_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
+
+
+int check_params(int num, char *str[]){
+	if(num != 3){
+		printf("ERROR: params more or less!\n");
+		return -1;
+	}
+
+	int mgmt = atoi(str[2]);
+	if(mgmt >= 0 && mgmt <= 3){
+		return 0;
+	}else{
+		printf("ERROR: key_mgmt not allowed\n");
+		return -1;
+	}
+
+}
+
 /*
  *argc[1]   ap ssid
  *argc[2]   ap key_mgmt:"0"--WIFIMG_NONE;"1"--WIFIMG_WPA_PSK;"2"--WIFIMG_WPA2_PSK;"3"--WIFIMG_WEP
@@ -146,8 +183,19 @@ int main(int argv, char *argc[]){
     int ret = -1, switch_int = -1;
     int event_label = 0;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
-	tKEY_MGMT key_mgmt = WIFIMG_NONE;
-	char net_id[4]={0};
+    tKEY_MGMT key_mgmt = WIFIMG_NONE;
+    char net_id[10]={0};
+    int id_len = sizeof(net_id);
+
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(check_params(argv, argc)){
+		print_help();
+		return -1;
+	}
 
     event_label = rand();
     p_wifi_interface = aw_wifi_on(wifi_event_handle, event_label);
@@ -178,14 +226,15 @@ int main(int argv, char *argc[]){
 	}
 
 
-    ret = ( p_wifi_interface->get_netid(argc[1], key_mgmt, net_id));
+    ret = p_wifi_interface->get_netid(argc[1], key_mgmt, net_id, &id_len);
     if(ret == 0){
-		printf("The netid of your network is %s\n",net_id);
-		printf("******************************\n");
+	printf("The netid of your network is %s\n",net_id);
+	printf("The lenght of netid is %d\n",id_len);
+	printf("******************************\n");
 	printf("Wifi get netid test: Success!\n");
 	printf("******************************\n");
     }else{
-		printf("get netid test failed!\n");
+	printf("get netid test failed!\n");
 
     }
 

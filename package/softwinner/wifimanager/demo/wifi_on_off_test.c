@@ -124,9 +124,20 @@ static void wifi_event_handle(tWIFI_EVENT wifi_event, void *buf, int event_label
     }
 }
 
+
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_on_off_test\n");
+	printf("DESCRIPTION:\n\ttest the stability of wifi module(do wifi on and wifi off 1000 times)\n");
+	printf("USAGE:\n\twifi_on_off_test\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_on_off_test --help\n");
+	printf("\twifi_on_off_test -h\n");
+	printf("\twifi_on_off_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
 /*
- *argc[1]   ap ssid
- *argc[2]   ap passwd
 */
 int main(int argv, char *argc[]){
     int ret = 0;
@@ -134,6 +145,16 @@ int main(int argv, char *argc[]){
 
     const aw_wifi_interface_t *p_wifi_interface = NULL;
 
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(argv != 1){
+		printf("ERROR:No need other params\n");
+		print_help();
+		return -1;
+	}
     event_label=rand();
     for(i=0; i<WIFI_ON_OFF_TEST_CNTS;i++)
     {

@@ -20,6 +20,7 @@ static pthread_mutex_t scan_mutex;
 static pthread_cond_t  scan_cond;
 static int  scan_pause = 0;
 static int  scan_error = 0;
+static int do_scan_flag = 1;
 
 /* run scan immediately */
 static pthread_mutex_t thread_run_mutex;
@@ -37,7 +38,6 @@ int update_scan_results()
     printf("update scan results enter\n");
 
     pthread_mutex_lock(&thread_run_mutex);
-    printf("=====%s: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
     scan_completed = 0;
     pthread_cond_signal(&thread_run_cond);
     pthread_mutex_unlock(&thread_run_mutex);
@@ -59,7 +59,6 @@ int get_scan_results_inner(char *result, int *len)
     int ret = 0;
 
     pthread_mutex_lock(&scan_mutex);
-    printf("=====%s: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
 
     if(0 != scan_error)
     {
@@ -204,6 +203,8 @@ void *wifi_scan_thread(void *args)
     struct timespec outtime;
 
     while(scan_running){
+      if(do_scan_flag == 1){
+
         pthread_mutex_lock(&scan_mutex);
 
         while(scan_pause == 1){
@@ -217,7 +218,6 @@ void *wifi_scan_thread(void *args)
 
         /* scan cmd */
         strncpy(cmd, "SCAN", 15);
-        printf("=====%s do scan: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
         ret = wifi_command(cmd, reply, sizeof(reply));
         if(ret){
             scan_error = 1;
@@ -237,7 +237,6 @@ void *wifi_scan_thread(void *args)
         if(get_scan_status() == 1){
             strncpy(cmd, "SCAN_RESULTS", 15);
             cmd[15] = '\0';
-            printf("=====%s do scan_reusults: scan thread id: %lu, thread id: %lu, pid: %lu=====\n", __func__, scan_thread_id, pthread_self(), getpid());
             ret = wifi_command(cmd, scan_results, sizeof(scan_results));
             if(ret){
                 scan_error = 1;
@@ -264,7 +263,18 @@ void *wifi_scan_thread(void *args)
         outtime.tv_nsec = now.tv_usec *1000;
         pthread_cond_timedwait(&thread_run_cond, &thread_run_mutex, &outtime);
         pthread_mutex_unlock(&thread_run_mutex);
-    }
+      }//end of if do_scan_flag
+    }//end of while scan running
+}
+
+void shutdown_wifi_scan_thread()
+{
+    do_scan_flag = 0;
+}
+
+void restart_wifi_scan_thread()
+{
+    do_scan_flag = 1;
 }
 
 void start_wifi_scan_thread(void *args)

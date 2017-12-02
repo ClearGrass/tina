@@ -10,6 +10,8 @@ extern "C" {
 #define KEY_WPA_PSK_INDEX 1
 #define KEY_WEP_INDEX     2
 
+void shutdown_wifi_scan_thread();
+void restart_wifi_scan_thread();
 void start_wifi_scan_thread(void *args);
 void stop_wifi_scan_thread();
 void pause_wifi_scan_thread();

@@ -138,9 +138,26 @@ void *app_scan_task(void *args)
     }
 }
 
+void print_help(){
+	printf("---------------------------------------------------------------------------------\n");
+	printf("NAME:\n\twifi_connect_chinese_ap_test\n");
+	printf("DESCRIPTION:\n\tconnect the AP with Chinese in ssid.(Just use to test,Users no need to\n\ttry this!)");
+	printf(" And in this test, the ssid and passwd of AP are:\n");
+	printf("\t\tssid     : utf-8 code of 测试123\n");
+	printf("\t\tpassword : 12345678\n");
+	printf("\nUSAGE:\n\twifi_connect_chinese_ap_test\n");
+	printf("--------------------------------------MORE---------------------------------------\n");
+	printf("The way to get help information:\n");
+	printf("\twifi_connect_chinese_ap_test --help\n");
+	printf("\twifi_connect_chinese_ap_test -h\n");
+	printf("\twifi_connect_chinese_ap_test -H\n");
+	printf("---------------------------------------------------------------------------------\n");
+}
+
+
 /*
- *argc[1]   ap ssid
- *argc[2]   ap passwd
+ *
+ *
 */
 int main(int argv, char *argc[]){
     int ret = 0, len = 0;
@@ -148,6 +165,17 @@ int main(int argv, char *argc[]){
     char ssid[256] = {0}, scan_results[4096] = {0};
     int  wifi_state = WIFIMG_WIFI_DISABLED;
     const aw_wifi_interface_t *p_wifi_interface = NULL;
+
+	if(argv == 2 && (!strcmp(argc[1],"--help") || !strcmp(argc[1], "-h") || !strcmp(argc[1], "-H"))){
+		print_help();
+		return -1;
+	}
+
+	if(argv != 1){
+		printf("ERROR: No need other params!\n");
+		print_help();
+		return -1;
+	}
 
     printf("\n*********************************\n");
     printf("***Start wifi connect ap test!***\n");
@@ -174,7 +202,7 @@ int main(int argv, char *argc[]){
     printf("%s\n", scan_results);
     //pthread_create(&app_scan_tid, NULL, &app_scan_task,(void *)p_wifi_interface);
 
-    /* connect to ssid:测试123/passwd "" */
+    /* connect to ssid:测试123/passwd "12345678" */
     event_label++;
     ssid[0] = 0xe6;    //utf-8 code
     ssid[1] = 0xb5;
@@ -186,7 +214,7 @@ int main(int argv, char *argc[]){
     ssid[7] = 0x32;
     ssid[8] = 0x33;
     ssid[9] = '\0';
-    p_wifi_interface->connect_ap(ssid, "", event_label);
+    p_wifi_interface->connect_ap(ssid, "12345678", event_label);
 
     while(aw_wifi_get_wifi_state() == WIFIMG_WIFI_BUSING){
         printf("wifi state busing,waiting\n");
