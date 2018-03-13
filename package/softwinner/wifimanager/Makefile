@@ -103,6 +103,7 @@ define Package/wifimanager-demo/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_add_network_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_longtime_test $(1)/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_remove_all_networks_test $(1)/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wifi_stop_restart_scan_test $(1)/bin
 	$(INSTALL_BIN) ./wifitest.sh $(1)/etc/wifi
 endef
 

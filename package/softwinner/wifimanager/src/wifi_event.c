@@ -10,7 +10,7 @@
 #include "wifi_intf.h"
 #include "wpa_supplicant_conf.h"
 
-tWIFI_STATE  gwifi_state;
+tWIFI_STATE  gwifi_state = WIFIMG_WIFI_DISABLED;
 extern char netid_connecting[];
 extern int  connecting_ap_event_label;
 extern int  disconnect_ap_event_label;
@@ -97,7 +97,7 @@ static int dispatch_event(const char *event_str, int nread)
                     wifi_command(cmd, reply, sizeof(reply));
 
                     set_wifi_machine_state(DISCONNECTED_STATE);
-					set_cur_wifi_event(PASSWORD_INCORRECT);
+		    set_cur_wifi_event(PASSWORD_INCORRECT);
                 }
                 return 0;
             }

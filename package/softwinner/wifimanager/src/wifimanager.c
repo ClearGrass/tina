@@ -18,7 +18,8 @@ char netid_connecting[NET_ID_LEN+1] = {0};
 int  disconnecting = 0;
 int  connecting_ap_event_label = 0;
 int  disconnect_ap_event_label = 0;
-tWIFI_STATE  gwifi_state = WIFIMG_WIFI_DISABLED;
+//tWIFI_STATE  gwifi_state = WIFIMG_WIFI_DISABLED;
+extern tWIFI_STATE  gwifi_state;
 
 static tWIFI_EVENT  event_code = WIFIMG_NO_NETWORK_CONNECTING;
 static int aw_wifi_disconnect_ap(int event_label);
@@ -1746,8 +1747,9 @@ int aw_wifi_off(const aw_wifi_interface_t *p_wifi_interface)
     stop_wifi_scan_thread();
     wifi_close_supplicant_connection();
     wifi_stop_supplicant(0);
+    while(gwifi_state != WIFIMG_WIFI_DISABLED)
+        usleep(200*1000);
     reset_wifi_event_callback();
-    gwifi_state = WIFIMG_WIFI_DISABLED;
     return 0;
 }
 

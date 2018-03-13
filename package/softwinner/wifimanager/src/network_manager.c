@@ -15,7 +15,8 @@
 
 /* scan thread */
 static pthread_t       scan_thread_id;
-static int  scan_running = 0;
+static int scan_running = 0;
+static int scan_terminating = 0;
 static pthread_mutex_t scan_mutex;
 static pthread_cond_t  scan_cond;
 static int  scan_pause = 0;
@@ -25,6 +26,10 @@ static int do_scan_flag = 1;
 /* run scan immediately */
 static pthread_mutex_t thread_run_mutex;
 static pthread_cond_t  thread_run_cond;
+
+/*stop restart scan*/
+static pthread_mutex_t scan_stop_restart_mutex;
+static pthread_cond_t  scan_stop_restart_cond;
 
 /* store scan results */
 static char scan_results[SCAN_BUF_LEN];
@@ -52,6 +57,36 @@ int update_scan_results()
     return 0;
 }
 
+int remove_slash_from_scan_results()
+{
+    char *ptr = NULL;
+    char *ptr_s = NULL;
+    char *ftr = NULL;
+
+    ptr_s = scan_results;
+    while(1)
+    {
+        ptr = strchr(ptr_s,'\"');
+	if(ptr == NULL)
+	    break;
+
+        ptr_s = ptr;
+        if((*(ptr-1)) == '\\')
+	{
+            ftr = ptr;
+            ptr -= 1;
+            while(*ftr != '\0')
+                *(ptr++) = *(ftr++);
+            *ptr = '\0';
+            continue; //restart new search at ptr_s after removing slash
+	}
+        else
+            ptr_s++; //restart new search at ptr_s++
+    }
+
+    return 0;
+}
+
 int get_scan_results_inner(char *result, int *len)
 {
     int index = 0;
@@ -66,6 +101,7 @@ int get_scan_results_inner(char *result, int *len)
         ret = -1;
     }
 
+    remove_slash_from_scan_results();
     if(*len <= scan_results_len){
         strncpy(result, scan_results, *len-1);
         index = *len -1;
@@ -138,6 +174,7 @@ int get_key_mgmt(const char *ssid, int key_mgmt_info[])
 
     //point second line of scan results
     ptr++;
+    remove_slash_from_scan_results();
 	while(1){
 		/* line end */
 		pend = strchr(ptr, '\n');
@@ -203,7 +240,17 @@ void *wifi_scan_thread(void *args)
     struct timespec outtime;
 
     while(scan_running){
-      if(do_scan_flag == 1){
+
+        pthread_mutex_lock(&scan_stop_restart_mutex);
+        while(do_scan_flag == 0){
+            pthread_cond_wait(&scan_stop_restart_cond, &scan_stop_restart_mutex);
+        }
+	if(scan_terminating)
+        {
+            pthread_mutex_unlock(&scan_stop_restart_mutex);
+            continue;
+	}
+        pthread_mutex_unlock(&scan_stop_restart_mutex);
 
         pthread_mutex_lock(&scan_mutex);
 
@@ -261,24 +308,32 @@ void *wifi_scan_thread(void *args)
         gettimeofday(&now, NULL);
         outtime.tv_sec = now.tv_sec + 15;
         outtime.tv_nsec = now.tv_usec *1000;
-        pthread_cond_timedwait(&thread_run_cond, &thread_run_mutex, &outtime);
+        if(!scan_terminating)
+            pthread_cond_timedwait(&thread_run_cond, &thread_run_mutex, &outtime);
         pthread_mutex_unlock(&thread_run_mutex);
-      }//end of if do_scan_flag
     }//end of while scan running
 }
 
 void shutdown_wifi_scan_thread()
 {
+    pthread_mutex_lock(&scan_stop_restart_mutex);
     do_scan_flag = 0;
+    pthread_mutex_unlock(&scan_stop_restart_mutex);
 }
 
 void restart_wifi_scan_thread()
 {
+    pthread_mutex_lock(&scan_stop_restart_mutex);
     do_scan_flag = 1;
+    pthread_mutex_unlock(&scan_stop_restart_mutex);
+    pthread_cond_signal(&scan_stop_restart_cond);
 }
 
 void start_wifi_scan_thread(void *args)
 {
+    scan_terminating = 0;
+    pthread_mutex_init(&scan_stop_restart_mutex, NULL);
+    pthread_cond_init(&scan_stop_restart_cond, NULL);
     pthread_mutex_init(&scan_mutex, NULL);
     pthread_cond_init(&scan_cond, NULL);
     pthread_mutex_init(&thread_run_mutex, NULL);
@@ -304,13 +359,20 @@ void resume_wifi_scan_thread()
 
 void stop_wifi_scan_thread()
 {
-	  scan_running = 0;
-	  usleep(200*1000);
-	  pthread_join(scan_thread_id, NULL);
+    scan_running = 0;
+    usleep(200*1000);
+    pthread_mutex_lock(&thread_run_mutex);
+    scan_terminating = 1;
+    pthread_cond_signal(&thread_run_cond);
+    pthread_mutex_unlock(&thread_run_mutex);
 
-      pthread_cond_destroy(&thread_run_cond);
-      pthread_mutex_destroy(&thread_run_mutex);
+    restart_wifi_scan_thread();//if scan is stopped by the user, wake up the scan_thread
 
-      pthread_cond_destroy(&scan_cond);
-	  pthread_mutex_destroy(&scan_mutex);
+    pthread_join(scan_thread_id, NULL);
+    pthread_cond_destroy(&thread_run_cond);
+    pthread_mutex_destroy(&thread_run_mutex);
+    pthread_cond_destroy(&scan_cond);
+    pthread_mutex_destroy(&scan_mutex);
+    pthread_cond_destroy(&scan_stop_restart_cond);
+    pthread_mutex_destroy(&scan_stop_restart_mutex);
 }
